@@ -4,7 +4,7 @@
     "Description": "Automates Farm Brainrots with just one toggle.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/PaperPlaneforBrainrots",
     "ImageAssetId": "rbxassetid://120627766450661",
-    "TagType": "NONE"
+    "TagType": "UPDATED"
   },
   {
     "Name": "🌲 Axe RNG",
@@ -89,5 +89,12 @@
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/RunforNEEDOH",
     "ImageAssetId": "rbxassetid://108809198857178",
     "TagType": "HOT"
-  }
+  },
+  {
+    "Name": "[NEW!🔥] Paint Or Seek",
+    "Description": "Auto paint, wall‑check aimbot, advanced ESP, and automated crate/wheel spins for Paint And SEEK!",
+    "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/PaintOrSeek",
+    "ImageAssetId": "rbxassetid://106255753802990",
+    "TagType": "HOT"
+  },
 ]
