@@ -4,7 +4,14 @@
     "Description": "Automates Farm Brainrots with just one toggle.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/PaperPlaneforBrainrots",
     "ImageAssetId": "rbxassetid://120627766450661",
-    "TagType": "UPDATED"
+    "TagType": "NONE"
+  },
+  {
+    "Name": "Fill the Bucket",
+    "Description": "Infinite Stamina?,And So Much Op Features",
+    "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/FilltheBucket",
+    "ImageAssetId": "rbxassetid://84394647849599",
+    "TagType": "HOT"
   },
   {
     "Name": "🌲 Axe RNG",
@@ -46,7 +53,7 @@
     "Description": "Auto Farm, You can stay afk 24/7",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/CrabTycoon",
     "ImageAssetId": "rbxassetid://140695431502264",
-    "TagType": "UPDATED"
+    "TagType": "NONE"
   },
   {
     "Name": "+1 Health For Brainrot!",
@@ -81,27 +88,27 @@
     "Description": "Cool Script that automates everything",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/ClickerSimulator",
     "ImageAssetId": "rbxassetid://70478021723927",
-    "TagType": "HOT"
+    "TagType": "NONE"
   },
   {
     "Name": "Clean The Supermarket!",
     "Description": "Still In BETA",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/CleanTheSupermarket",
     "ImageAssetId": "rbxassetid://71106815058446",
-    "TagType": "HOT"
+    "TagType": "NONE"
   },
   {
     "Name": "[UPD] +1 Run for NEEDOH!",
     "Description": "Get your needohs",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/RunforNEEDOH",
     "ImageAssetId": "rbxassetid://108809198857178",
-    "TagType": "HOT"
+    "TagType": "NONE"
   },
   {
     "Name": "[NEW!🔥] Paint Or Seek",
     "Description": "Auto paint, wall‑check aimbot, advanced ESP, and automated crate/wheel!",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/PaintOrSeek",
     "ImageAssetId": "rbxassetid://106255753802990",
-    "TagType": "HOT"
+    "TagType": "NONE"
   }
 ]
