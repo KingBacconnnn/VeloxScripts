@@ -7,6 +7,13 @@
     "TagType": "UPDATED"
   },
   {
+    "Name": "+1 Speed Slime Keyboard Escape",
+    "Description": "Simple, But OP Features",
+    "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/SpeedSlimeKeyboardEscape",
+    "ImageAssetId": "rbxassetid://104463734310957",
+    "TagType": "HOT"
+  },
+  {
     "Name": "Throw Hammers for Brainrots!",
     "Description": "This Script Is the best, Request by the youtube comments",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/ThrowHammersforBrainrot",
@@ -15,10 +22,10 @@
   },
   {
     "Name": "Fill the Bucket",
-    "Description": "Infinite Stamina?,And So Much Op Features",
+    "Description": "Infinite Stamina? And So Much Op Features",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/FilltheBucket",
     "ImageAssetId": "rbxassetid://84394647849599",
-    "TagType": "HOT"
+    "TagType": "NONE"
   },
   {
     "Name": "🌲 Axe RNG",
