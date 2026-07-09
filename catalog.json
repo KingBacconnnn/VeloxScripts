@@ -7,6 +7,13 @@
     "TagType": "UPDATED"
   },
   {
+    "Name": "+1 Hack Per Click",
+    "Description": "Automates wall breaking, rebirths, backpack purchases, upgrades, boosts, egg opening, wheel spins, and title rolls",
+    "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/HackPerClick",
+    "ImageAssetId": "rbxassetid://114139529313872",
+    "TagType": "HOT"
+  },
+  {
     "Name": "+1 Speed Slime Keyboard Escape",
     "Description": "Simple, But OP Features",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/SpeedSlimeKeyboardEscape",
@@ -18,7 +25,7 @@
     "Description": "This Script Is the best, Request by the youtube comments",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/ThrowHammersforBrainrot",
     "ImageAssetId": "rbxassetid://115011163526994",
-    "TagType": "HOT"
+    "TagType": "NONE"
   },
   {
     "Name": "Fill the Bucket",
