@@ -6,7 +6,14 @@
     "ImageAssetId": "rbxassetid://120627766450661",
     "TagType": "NONE"
   },
-   {
+  {
+    "Name": "My Giant Sandwich",
+    "Description": "it takes 20 sec to load, And also has OP features",
+    "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/MyGiantSandwich",
+    "ImageAssetId": "rbxassetid://118225999381998",
+    "TagType": "HOT"
+  },
+  {
     "Name": "Build a base RNG 🎲",
     "Description": "New Game, You Will Encounter A Delay When Executing, But it works perfectly",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/buildabaseRNG",
