@@ -7,6 +7,20 @@
     "TagType": "NONE"
   },
   {
+    "Name": "+1 Bottle Flip Obby Escape",
+    "Description": "Keep flipping bottle. Still OP",
+    "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/BottleFlipObbyEscape",
+    "ImageAssetId": "rbxassetid://138472026799705",
+    "TagType": "HOT"
+  },
+  {
+    "Name": "+1 Pickaxe Swing Escape",
+    "Description": "Op That you can get to the leaderboard",
+    "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/PickaxeSwingEscape",
+    "ImageAssetId": "rbxassetid://73842518331517",
+    "TagType": "HOT"
+  },
+  {
     "Name": "Find and Mark!",
     "Description": "Auto Play Is OP",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/FindandMark",
