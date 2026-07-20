@@ -8,6 +8,14 @@
     "LastUpdated": 1783699200
   },
   {
+  "Name": "[🧬] Throw a Coin",
+  "Description": "Auto Throw, Auto Equip Best Coin, Auto Sell All, Auto Buy Coins, Auto Upgrades",
+  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/ThrowaCoin",
+  "ImageAssetId": "rbxassetid://80474715145780",
+  "TagType": "HOT",
+  "LastUpdated": 1784550168
+  },
+  {
   "Name": "[🏆] Build an ASMR Tower",
   "Description": "automates building, farming, buying, crafting, fusing, upgrades & codes",
   "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/BuildanASMRTower",
@@ -20,7 +28,7 @@
     "Description": "Keep flipping bottle. Still OP",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/BottleFlipObbyEscape",
     "ImageAssetId": "rbxassetid://138472026799705",
-    "TagType": "HOT",
+    "TagType": "NONE",
     "LastUpdated": 1784374800
   },
   {
@@ -44,7 +52,7 @@
     "Description": "it takes 20 sec to load, And also has OP features",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/MyGiantSandwich",
     "ImageAssetId": "rbxassetid://118225999381998",
-    "TagType": "HOT",
+    "TagType": "NONE",
     "LastUpdated": 1784131200
   },
   {
