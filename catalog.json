@@ -9,11 +9,38 @@
     "PlaceId": 0
   },
   {
+    "Name": "[X2] +1 Cut Grass Adventure",
+    "Description": "Touch grass. Literally. Cut grass, get stronger, and pretend this is a productive use of your time.",
+    "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/CutGrassAdventure",
+    "ImageAssetId": "rbxassetid://115885312977657",
+    "TagType": "HOT",
+    "LastUpdated": 1786885620,
+    "PlaceId": 90086669327265
+  },
+  {
+    "Name": "[NOW] +1 Jump Crunchy ASMR Escape!",
+    "Description": "Jump around, make satisfying crunchy noises, and escape before your legs decide they’ve had enough.",
+    "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/JumpCrunchyASMREscape",
+    "ImageAssetId": "rbxassetid://70770599354986",
+    "TagType": "HOT",
+    "LastUpdated": 1786885620,
+    "PlaceId": 83264774625004
+  },
+  {
+    "Name": "Steal An Egg",
+    "Description": "Made By Spiritual Gaming (not my script) CODE: DEMONSLAYER23 (my steal an egg is on progress it just overcomplicated becuz of too many anti cheats in the game)",
+    "RawUrl": "https://gist.githubusercontent.com/spiritualgaming1123-beep/f2c8c4009b2c4d4dda1b3d5fcb263ef3/raw/121ff8c9b59476a7a362b543edc61499e5832937/gistfile1.lua",
+    "ImageAssetId": "rbxassetid://99167825730320",
+    "TagType": "HOT",
+    "LastUpdated": 1786885620,
+    "PlaceId": 107778070777162
+  }
+  {
     "Name": "Magic Loot[🦕Dino Event]",
     "Description": "Im Inevitable, have auto collect drops",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/MagicLootDinoEvent",
     "ImageAssetId": "rbxassetid://100090397593569",
-    "TagType": "HOT",
+    "TagType": "NONE",
     "LastUpdated": 1786320957,
     "PlaceId": 133188236593503
   },
@@ -22,7 +49,7 @@
     "Description": "inf jump is crazzy",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/HeightPerJump",
     "ImageAssetId": "rbxassetid://128914503653072",
-    "TagType": "HOT",
+    "TagType": "NONE",
     "LastUpdated": 1785900306,
     "PlaceId": 0
   },
@@ -31,7 +58,7 @@
     "Description": "best script tbh",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/AnimeCardFarm",
     "ImageAssetId": "rbxassetid://112827759842870",
-    "TagType": "HOT",
+    "TagType": "NONE",
     "LastUpdated": 1785900306,
     "PlaceId": 0
   },
@@ -40,7 +67,7 @@
     "Description": "Auto Buy Crates & More",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/UnboxASMR",
     "ImageAssetId": "rbxassetid://111049459251843",
-    "TagType": "HOT",
+    "TagType": "NONE",
     "LastUpdated": 1785593914,
     "PlaceId": 0
   },
@@ -49,7 +76,7 @@
     "Description": "ooo aaaa script (inf grab btw)",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/BananaMonkeyDestruction",
     "ImageAssetId": "rbxassetid://109800845162836",
-    "TagType": "UPDATED",
+    "TagType": "NONE",
     "LastUpdated": 1785593914,
     "PlaceId": 0
   },
@@ -292,7 +319,7 @@
     "Description": "Autofarm, Auto Open Lucky Blocks",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/ChickenFarm",
     "ImageAssetId": "rbxassetid://100059908177743",
-    "TagType": "UPDATED",
+    "TagType": "NONE",
     "LastUpdated": 1784886351,
     "PlaceId": 0
   },
