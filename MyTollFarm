@@ -1,0 +1,448 @@
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+local LocalPlayer = Players.LocalPlayer
+
+local RebirthEvent = ReplicatedStorage:WaitForChild("Events"):WaitForChild("RebirthEvent")
+local RebirthDefinitions = require(ReplicatedStorage:WaitForChild("Modules"):WaitForChild("RebirthDefinitions"))
+local RollUpgradeRequest = ReplicatedStorage:WaitForChild("Events"):WaitForChild("RollUpgradeRequest")
+local LineUpgradeRequest = ReplicatedStorage:WaitForChild("Events"):WaitForChild("LineUpgradeRequest")
+local TollUpgradeEvent = ReplicatedStorage:WaitForChild("Events"):WaitForChild("TollUpgradeEvent")
+
+local abbreviations = {
+    K = 1e3, M = 1e6, B = 1e9, T = 1e12,
+    Qa = 1e15, Qi = 1e18, Sx = 1e21, Sp = 1e24,
+    Oc = 1e27, No = 1e30, Dc = 1e33, Ud = 1e36,
+    Dd = 1e39, Td = 1e42
+}
+
+local function parseMoneyText(text)
+    if type(text) ~= "string" then return nil end
+    text = text:gsub(",", "")
+    if text == "MAX" or text == "FREE" then return nil end
+    local num, suffix = text:match("^%$?([%d%.]+)%s*([%a]*)")
+    if not num then return nil end
+    local value = tonumber(num)
+    if not value then return nil end
+    if suffix and abbreviations[suffix] then
+        value = value * abbreviations[suffix]
+    end
+    return value
+end
+
+local function getMoney()
+    local leaderstats = LocalPlayer:FindFirstChild("leaderstats")
+    if not leaderstats then return 0 end
+    local money = leaderstats:FindFirstChild("Money")
+    if not money then return 0 end
+    if money:IsA("IntValue") or money:IsA("NumberValue") then
+        return tonumber(money.Value) or 0
+    elseif money:IsA("StringValue") then
+        return parseMoneyText(money.Value) or 0
+    end
+    return 0
+end
+
+local function getHRP()
+    local char = LocalPlayer.Character
+    if not char then return nil end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then hrp = char:WaitForChild("HumanoidRootPart", 2) end
+    return hrp
+end
+
+local function findOwnedPlot()
+    local plots = Workspace:FindFirstChild("Plots")
+    if not plots then return nil end
+    for _, plot in ipairs(plots:GetChildren()) do
+        if plot:GetAttribute("OwnerUserId") == LocalPlayer.UserId then
+            return plot
+        end
+    end
+    return nil
+end
+
+local function getPromptPosition(prompt)
+    local parent = prompt.Parent
+    if not parent then return nil end
+    if parent:IsA("BasePart") then
+        return parent.Position
+    elseif parent:IsA("Model") then
+        local primary = parent.PrimaryPart or parent:FindFirstChildWhichIsA("BasePart")
+        if primary then return primary.Position end
+        return parent:GetPivot().Position
+    else
+        return parent:GetPivot().Position
+    end
+end
+
+local function triggerPrompt(prompt)
+    prompt.Enabled = true
+    if fireproximityprompt then
+        fireproximityprompt(prompt)
+    elseif prompt.InputHoldBegin then
+        prompt:InputHoldBegin()
+        task.wait(0.1)
+        prompt:InputHoldEnd()
+    else
+        pcall(function() prompt:Prompt() end)
+    end
+end
+
+local function findLeverPrompt(plot)
+    for _, obj in ipairs(plot:GetDescendants()) do
+        if obj:IsA("ProximityPrompt") and obj.ObjectText == "CAR RNG" then
+            return obj
+        end
+    end
+    return nil
+end
+
+local function findClaimPrompts(plot)
+    local prompts = {}
+    for _, obj in ipairs(plot:GetDescendants()) do
+        if obj:IsA("ProximityPrompt") and obj.Name == "ClaimPrompt" then
+            table.insert(prompts, obj)
+        end
+    end
+    return prompts
+end
+
+local function getCarRaritySimple(prompt)
+    local obj = prompt.Parent
+    for _ = 1, 3 do
+        if obj then
+            local rarity = obj:GetAttribute("Rarity")
+            if rarity then return tostring(rarity) end
+            obj = obj.Parent
+        end
+    end
+    return nil
+end
+
+local function findClaimPromptsByRarity(plot, selected)
+    local prompts = {}
+    for _, obj in ipairs(plot:GetDescendants()) do
+        if obj:IsA("ProximityPrompt") and obj.Name == "ClaimPrompt" then
+            local rarity = getCarRaritySimple(obj)
+            if rarity and selected[rarity] then
+                table.insert(prompts, obj)
+            end
+        end
+    end
+    return prompts
+end
+
+local Window = WindUI:CreateWindow({
+    Title = "[NEW] My Toll Farm! BETA",
+    Icon = "car",
+    Author = "by Ovei",
+    Folder = "CarRNGHub",
+    Size = UDim2.fromOffset(580, 500),
+    MinSize = Vector2.new(500, 420),
+    Theme = "Dark"
+})
+
+local TabChangelog = Window:Tab({ Title = "Changelog", Icon = "scroll" })
+local TabGeneral = Window:Tab({ Title = "General", Icon = "house" })
+local TabUpgrades = Window:Tab({ Title = "Upgrades", Icon = "trending-up" })
+local TabCarRNG = Window:Tab({ Title = "Car RNG", Icon = "car" })
+
+TabChangelog:Paragraph({
+    Title = "Changelog",
+    Desc = "v1.0 - [NEW] My Toll Farm! BETA (still has bugs)\n\n- Auto Rebirth\n- Auto Toll Upgrade\n- Auto Roll Upgrades (Luck & Areas)\n- Auto Line Upgrades (Traffic Lines, Car Speed, Spawn Speed)\n- Car RNG Auto Roll & Buy with rarity targeting\n\nAll features run independently.",
+    Color = "Green"
+})
+
+local autoRebirthEnabled = false
+TabGeneral:Toggle({
+    Title = "Auto Rebirth",
+    Desc = "Automatically rebirth when affordable",
+    Value = false,
+    Callback = function(state) autoRebirthEnabled = state end
+})
+
+local autoTollUpgradeEnabled = false
+TabGeneral:Toggle({
+    Title = "Auto Upgrade Toll",
+    Desc = "Automatically purchase toll upgrades when affordable",
+    Value = false,
+    Callback = function(state) autoTollUpgradeEnabled = state end
+})
+
+local rollUpgradeOptions = { "Luck Upgrade", "Roll Stand Upgrade" }
+local selectedRollUpgrades = {}
+local autoRollUpgradeEnabled = false
+
+TabUpgrades:Dropdown({
+    Title = "Roll Upgrade Types",
+    Desc = "Select roll upgrades to auto buy",
+    Values = rollUpgradeOptions,
+    Value = {},
+    Multi = true,
+    AllowNone = true,
+    Callback = function(selected)
+        selectedRollUpgrades = {}
+        for _, name in ipairs(selected) do selectedRollUpgrades[name] = true end
+    end
+})
+
+TabUpgrades:Toggle({
+    Title = "Auto Roll Upgrades",
+    Desc = "Automatically buy selected roll upgrades when affordable",
+    Value = false,
+    Callback = function(state) autoRollUpgradeEnabled = state end
+})
+
+local lineUpgradeInternal = { "LineUpgrade", "CarsSpeedUpgrade", "SpawnIntervalUpgrade" }
+local lineUpgradeDisplay = { "Traffic Lines", "Car Speed", "Spawn Speed" }
+local displayToInternal = {
+    ["Traffic Lines"] = "LineUpgrade",
+    ["Car Speed"] = "CarsSpeedUpgrade",
+    ["Spawn Speed"] = "SpawnIntervalUpgrade"
+}
+local selectedLineUpgrades = {}
+local lineUpgradeAmount = 1
+local autoLineUpgradeEnabled = false
+
+TabUpgrades:Dropdown({
+    Title = "Line Upgrade Types",
+    Desc = "Select line upgrades to auto buy",
+    Values = lineUpgradeDisplay,
+    Value = {},
+    Multi = true,
+    AllowNone = true,
+    Callback = function(selected)
+        selectedLineUpgrades = {}
+        for _, displayName in ipairs(selected) do
+            local internalName = displayToInternal[displayName]
+            if internalName then selectedLineUpgrades[internalName] = true end
+        end
+    end
+})
+
+TabUpgrades:Dropdown({
+    Title = "Upgrade Amount",
+    Desc = "Select how many levels per purchase",
+    Values = {"1", "2", "5"},
+    Value = "",
+    Multi = false,
+    AllowNone = true,
+    Callback = function(value)
+        local amount = tonumber(tostring(value))
+        lineUpgradeAmount = amount and amount or 1
+    end
+})
+
+TabUpgrades:Toggle({
+    Title = "Auto Line Upgrades",
+    Desc = "Automatically purchase selected line upgrades when affordable",
+    Value = false,
+    Callback = function(state) autoLineUpgradeEnabled = state end
+})
+
+local RARITIES = { "Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic", "Exclusive" }
+local selectedCarRarities = { ["Common"] = true }
+local autoCarEnabled = false
+
+TabCarRNG:Dropdown({
+    Title = "Rarities to Buy",
+    Desc = "Select car rarities to auto claim",
+    Values = RARITIES,
+    Value = { "Common" },
+    Multi = true,
+    AllowNone = true,
+    Callback = function(selected)
+        selectedCarRarities = {}
+        for _, r in ipairs(selected) do selectedCarRarities[r] = true end
+    end
+})
+
+TabCarRNG:Toggle({
+    Title = "Auto Roll & Buy",
+    Desc = "Pull lever, then buy selected rarities",
+    Value = false,
+    Callback = function(state) autoCarEnabled = state end
+})
+
+local function getRebirthData()
+    return LocalPlayer:FindFirstChild("Rebirths")
+end
+
+local function getUpgradePriceFromGui(upgradeName)
+    local upgradeBoard = LocalPlayer.PlayerGui:FindFirstChild("UpgradeBoardGUI")
+    if not upgradeBoard then return nil end
+    local scrolling = upgradeBoard:FindFirstChild("ScrollingFrame")
+    if not scrolling then return nil end
+    local card = scrolling:FindFirstChild(upgradeName)
+    if not card then return nil end
+    local priceLabel = card:FindFirstChild("Price")
+    if not priceLabel or not priceLabel:IsA("TextLabel") then return nil end
+    return parseMoneyText(priceLabel.Text)
+end
+
+local function getOwnedTollBillboards()
+    local billboards = {}
+    local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
+    if not playerGui then return billboards end
+    local plot = findOwnedPlot()
+    if not plot then return billboards end
+    for _, obj in ipairs(playerGui:GetDescendants()) do
+        if obj:IsA("BillboardGui") and obj.Name:lower():find("toll") then
+            local adornee = obj.Adornee
+            if adornee and adornee:IsDescendantOf(plot) then
+                table.insert(billboards, obj)
+            end
+        end
+    end
+    return billboards
+end
+
+local function getBillboardPrice(billboard)
+    for _, label in ipairs(billboard:GetDescendants()) do
+        if label:IsA("TextLabel") then
+            local name = label.Name:lower()
+            if name:find("price") or name:find("cost") then
+                local price = parseMoneyText(label.Text)
+                if price then return price end
+            end
+        end
+    end
+    return nil
+end
+
+task.spawn(function()
+    while true do
+        if autoRebirthEnabled then
+            pcall(function()
+                local rebirths = LocalPlayer:FindFirstChild("Rebirths")
+                if rebirths and (rebirths:IsA("IntValue") or rebirths:IsA("NumberValue")) then
+                    local currentRebirths = math.floor(rebirths.Value)
+                    local currentLevel = RebirthDefinitions:GetLevel(currentRebirths)
+                    local nextLevel = RebirthDefinitions:GetNextLevel(currentRebirths)
+                    if nextLevel then
+                        local money = getMoney()
+                        if money >= currentLevel.RequiredMoney then
+                            RebirthEvent:FireServer("Rebirth")
+                        end
+                    end
+                end
+            end)
+        end
+        task.wait(1)
+    end
+end)
+
+task.spawn(function()
+    while true do
+        if autoTollUpgradeEnabled then
+            pcall(function()
+                local money = getMoney()
+                local billboards = getOwnedTollBillboards()
+                for _, billboard in ipairs(billboards) do
+                    local price = getBillboardPrice(billboard)
+                    if price and money >= price then
+                        TollUpgradeEvent:FireServer(billboard)
+                        task.wait(0.3)
+                    end
+                end
+            end)
+        end
+        task.wait(0.5)
+    end
+end)
+
+task.spawn(function()
+    while true do
+        if autoRollUpgradeEnabled then
+            pcall(function()
+                local money = getMoney()
+                local state = RollUpgradeRequest:InvokeServer("GetState")
+                if state and state.Ready then
+                    for displayName, isSelected in pairs(selectedRollUpgrades) do
+                        if isSelected then
+                            local key = displayName == "Luck Upgrade" and "Luck" or "Areas"
+                            local upgradeData = state[key]
+                            if upgradeData and not upgradeData.IsMaxed then
+                                local price = tonumber(upgradeData.Price) or 0
+                                if money >= price then
+                                    local upgradeId = key == "Luck" and "LuckUpgrade" or "RollStandUpgrade"
+                                    RollUpgradeRequest:InvokeServer("Purchase", upgradeId)
+                                    task.wait(0.3)
+                                end
+                            end
+                        end
+                    end
+                end
+            end)
+        end
+        task.wait(0.5)
+    end
+end)
+
+task.spawn(function()
+    while true do
+        if autoLineUpgradeEnabled then
+            pcall(function()
+                local money = getMoney()
+                for _, upgradeName in ipairs(lineUpgradeInternal) do
+                    if selectedLineUpgrades[upgradeName] then
+                        local price = getUpgradePriceFromGui(upgradeName)
+                        if price and money >= price then
+                            LineUpgradeRequest:InvokeServer("Purchase", upgradeName, lineUpgradeAmount)
+                            task.wait(0.3)
+                        end
+                    end
+                end
+            end)
+        end
+        task.wait(0.5)
+    end
+end)
+
+task.spawn(function()
+    while true do
+        if autoCarEnabled then
+            pcall(function()
+                local plot = findOwnedPlot()
+                if not plot then
+                    task.wait(1)
+                    return
+                end
+
+                local leverPrompt = findLeverPrompt(plot)
+                if leverPrompt then
+                    local pos = getPromptPosition(leverPrompt)
+                    local hrp = getHRP()
+                    if hrp and pos then
+                        local maxDist = leverPrompt.MaxActivationDistance or 5
+                        if (hrp.Position - pos).Magnitude > maxDist then
+                            hrp.CFrame = CFrame.new(pos + Vector3.new(0, 3, 0))
+                            task.wait(0.3)
+                        end
+                        triggerPrompt(leverPrompt)
+                        task.wait(1.5)
+                    end
+                end
+
+                local claimPrompts = findClaimPromptsByRarity(plot, selectedCarRarities)
+                for _, claimPrompt in ipairs(claimPrompts) do
+                    local pos = getPromptPosition(claimPrompt)
+                    local hrp = getHRP()
+                    if hrp and pos then
+                        local maxDist = claimPrompt.MaxActivationDistance or 5
+                        if (hrp.Position - pos).Magnitude > maxDist then
+                            hrp.CFrame = CFrame.new(pos + Vector3.new(0, 3, 0))
+                            task.wait(0.3)
+                        end
+                        triggerPrompt(claimPrompt)
+                        task.wait(0.5)
+                    end
+                end
+            end)
+        end
+        task.wait(1)
+    end
+end)
