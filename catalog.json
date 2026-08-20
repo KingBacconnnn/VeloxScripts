@@ -9,6 +9,33 @@
     "PlaceId": 0
   },
   {
+    "Name": "+1 High Jump Power",
+    "Description": "Boost your jump power and soar higher than ever.",
+    "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/HighJumpPower",
+    "ImageAssetId": "rbxassetid://121505296815495",
+    "TagType": "HOT",
+    "LastUpdated": 1787223474,
+    "PlaceId": 83388257263676
+  },
+  {
+    "Name": "+1 Web Swing Escape",
+    "Description": "Swing through the air and escape with powerful web moves.",
+    "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/WebSwingEscape",
+    "ImageAssetId": "rbxassetid://129142535236862",
+    "TagType": "HOT",
+    "LastUpdated": 1787223474,
+    "PlaceId": 110668201954727
+  },
+  {
+    "Name": "[NEW] My Toll Farm!",
+    "Description": "Build your toll farm and start collecting rewards.",
+    "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/MyTollFarm",
+    "ImageAssetId": "rbxassetid://82564760235836",
+    "TagType": "HOT",
+    "LastUpdated": 1787223474,
+    "PlaceId": 96425088123775
+  },
+  {
     "Name": "🪂 Fall For Brainrots!",
     "Description": "Gravity does the work, this script does the rest. Easiest brainrot you'll ever farm without lifting a finger.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/FallForBrainrots",
@@ -211,7 +238,7 @@
     "Description": "Executes with a slight delay (it's thinking, okay?), but works perfectly to automate the RNG chaos of base building.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/buildabaseRNG",
     "ImageAssetId": "rbxassetid://128276768200520",
-    "TagType": "UPDATED",
+    "TagType": "NONE",
     "LastUpdated": 1787134306,
     "PlaceId": 99108783264633
   },
