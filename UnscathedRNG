@@ -1,0 +1,301 @@
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local PlayerService = require(ReplicatedStorage:WaitForChild("Client"):WaitForChild("Services"):WaitForChild("PlayerService"))
+local Network = require(ReplicatedStorage:WaitForChild("Libraries"):WaitForChild("Network"))
+local Enums = require(ReplicatedStorage:WaitForChild("Enums"))
+local SkillTreeConfig = require(ReplicatedStorage:WaitForChild("Configs"):WaitForChild("SkillTreeConfig"))
+local RollRequest = require(ReplicatedStorage:WaitForChild("Client"):WaitForChild("UI"):WaitForChild("Screens"):WaitForChild("HUDUI"):WaitForChild("Spin"):WaitForChild("RollRequest"))
+local BattlepassConfig = require(ReplicatedStorage:WaitForChild("Configs"):WaitForChild("BattlepassConfig"))
+
+local Window = WindUI:CreateWindow({
+    Title = "Unscathed RNG",
+    Icon = "bot",
+    Author = "by Ovei",
+    Folder = "AutomationHub"
+})
+
+local ChangelogTab = Window:Tab({
+    Title = "Changelog",
+    Icon = "scroll-text"
+})
+ChangelogTab:Paragraph({
+    Title = "Version 3.0",
+    Desc = "Combined automation features:\n\n- Auto Claim Free Rewards\n- Auto Claim Achievements\n- Auto Upgrade Trees\n- Auto Roll & Equip\n\nClean and organized.",
+    Locked = false
+})
+
+local BattlepassTab = Window:Tab({
+    Title = "Free Rewards",
+    Icon = "ticket"
+})
+local AchievementsTab = Window:Tab({
+    Title = "Achievements",
+    Icon = "trophy"
+})
+local SkillTreeTab = Window:Tab({
+    Title = "Skill Trees",
+    Icon = "sparkles"
+})
+local RollTab = Window:Tab({
+    Title = "Rolling",
+    Icon = "dices"
+})
+
+-- Battlepass free rewards
+local autoClaimBattlepass = false
+local battlepassThread = nil
+
+local function getBattlepassLevel()
+    return PlayerService:GetStat("battlepassLevel") or 1
+end
+
+local function isFreeClaimed(level)
+    local claimed = PlayerService:GetStat("claimedBattlepassRewards")
+    if type(claimed) ~= "table" then return false end
+    local entry = claimed[level]
+    if type(entry) ~= "table" then return false end
+    return entry.Free == true or entry.free == true or entry[1] == true
+end
+
+BattlepassTab:Toggle({
+    Title = "Auto Claim Free Rewards",
+    Desc = "Automatically claims all available free battlepass rewards.",
+    Value = false,
+    Callback = function(state)
+        autoClaimBattlepass = state
+        if state then
+            if battlepassThread then return end
+            battlepassThread = task.spawn(function()
+                while autoClaimBattlepass do
+                    pcall(function()
+                        local currentLevel = getBattlepassLevel()
+                        local maxLevel = BattlepassConfig.GetMaxLevel()
+                        for level = 1, math.min(currentLevel, maxLevel) do
+                            if not isFreeClaimed(level) then
+                                Network.send("claim_battlepass_reward", level, "Free")
+                                task.wait(0.2)
+                            end
+                        end
+                    end)
+                    task.wait(1)
+                end
+                battlepassThread = nil
+            end)
+        end
+    end
+})
+
+-- Achievements
+local autoClaimAchievements = false
+local achievementsThread = nil
+
+AchievementsTab:Toggle({
+    Title = "Auto Claim Achievements",
+    Desc = "Automatically claims all available achievement rewards.",
+    Value = false,
+    Callback = function(state)
+        autoClaimAchievements = state
+        if state then
+            if achievementsThread then return end
+            achievementsThread = task.spawn(function()
+                while autoClaimAchievements do
+                    pcall(function()
+                        Network.send("claim_all_achievements")
+                    end)
+                    task.wait(2)
+                end
+                achievementsThread = nil
+            end)
+        end
+    end
+})
+
+-- Skill trees
+local treeLabels = {}
+local treeMap = {}
+for treeName, treeData in pairs(SkillTreeConfig.Trees) do
+    local label = treeData.Title or treeName
+    treeLabels[#treeLabels + 1] = label
+    treeMap[label] = treeName
+end
+table.sort(treeLabels)
+
+local selectedTrees = {}
+local autoUpgradeTrees = false
+local skillTreeThread = nil
+
+SkillTreeTab:Dropdown({
+    Title = "Select Skill Trees",
+    Desc = "Select which trees to auto upgrade entirely.",
+    Values = treeLabels,
+    Value = {},
+    Multi = true,
+    AllowNone = true,
+    Callback = function(option)
+        selectedTrees = option
+    end
+})
+
+SkillTreeTab:Toggle({
+    Title = "Auto Upgrade Skill",
+    Desc = "Automatically unlocks nodes in your selected skill trees when requirements are met.",
+    Value = false,
+    Callback = function(state)
+        autoUpgradeTrees = state
+        if state then
+            if skillTreeThread then return end
+            skillTreeThread = task.spawn(function()
+                while autoUpgradeTrees do
+                    pcall(function()
+                        local points = PlayerService.Data.skillTreePoints or 0
+                        local upgrades = PlayerService.Data.skillTreeUpgrades or {}
+                        for _, label in ipairs(selectedTrees) do
+                            if not autoUpgradeTrees then break end
+                            local treeName = treeMap[label]
+                            if treeName then
+                                local treeData = SkillTreeConfig.Trees[treeName]
+                                local treeUpgrades = upgrades[treeName] or {}
+                                local nodes = treeData.Nodes or {}
+                                local changed = true
+                                while changed and autoUpgradeTrees do
+                                    changed = false
+                                    for nodeName, node in pairs(nodes) do
+                                        if not treeUpgrades[nodeName] then
+                                            local canUnlock = true
+                                            for _, req in ipairs(node.Requires or {}) do
+                                                if not treeUpgrades[req] then
+                                                    canUnlock = false
+                                                    break
+                                                end
+                                            end
+                                            if canUnlock and points >= (node.Cost or 0) then
+                                                Network.send("skill_unlock_upgrade", treeName, nodeName)
+                                                points = points - (node.Cost or 0)
+                                                treeUpgrades[nodeName] = true
+                                                changed = true
+                                                task.wait(0.2)
+                                            end
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end)
+                    task.wait(1)
+                end
+                skillTreeThread = nil
+            end)
+        end
+    end
+})
+
+-- Auto roll & equip
+local autoRoll = false
+local isBusy = false
+local consecutiveErrors = 0
+local MAX_CONSECUTIVE_ERRORS = 5
+local runId = 0
+
+local function stopAutoRoll(reason)
+    autoRoll = false
+    isBusy = false
+    runId = runId + 1
+    WindUI:Notify({
+        Title = "Auto Roll",
+        Content = reason or "Stopped",
+        Duration = 5,
+        Icon = "x"
+    })
+end
+
+local function getUnresolvedAura()
+    return PlayerService:GetStat("unresolvedAura")
+end
+
+local function resolveUnresolved(currentRunId, callback)
+    local unresolved = getUnresolvedAura()
+    if typeof(unresolved) ~= "table" then
+        callback(true)
+        return
+    end
+    local function equip()
+        RollRequest.Send("resolve_unresolved_aura", nil, function(success, response)
+            if not autoRoll or currentRunId ~= runId then return end
+            if success and response and response.success then
+                callback(true)
+            elseif response and response.errorCode == Enums.ErrorCode.INVENTORY_FULL then
+                RollRequest.Send("resolve_unresolved_aura", nil, function(replaceSuccess, replaceResponse)
+                    if not autoRoll or currentRunId ~= runId then return end
+                    callback(replaceSuccess and replaceResponse and replaceResponse.success)
+                end, Enums.UnresolvedAuraAction.ReplaceLowest)
+            else
+                callback(false)
+            end
+        end, Enums.UnresolvedAuraAction.Equip)
+    end
+    equip()
+end
+
+local function processRollLoop(currentRunId)
+    if not autoRoll or isBusy or currentRunId ~= runId then return end
+    isBusy = true
+    resolveUnresolved(currentRunId, function(resolveSuccess)
+        isBusy = false
+        if not autoRoll or currentRunId ~= runId then return end
+        if resolveSuccess then
+            RollRequest.Send("roll_aura", nil, function(rollSuccess, rollResponse)
+                if not autoRoll or currentRunId ~= runId then return end
+                if rollSuccess and rollResponse and rollResponse.success then
+                    consecutiveErrors = 0
+                    if rollResponse.resolution == Enums.RollResolution.Unresolved then
+                        task.delay(0.5, function()
+                            processRollLoop(currentRunId)
+                        end)
+                    else
+                        local waitTime = (rollResponse.spinCooldown or 0.5) + 0.1
+                        task.delay(waitTime, function()
+                            processRollLoop(currentRunId)
+                        end)
+                    end
+                else
+                    consecutiveErrors = consecutiveErrors + 1
+                    if consecutiveErrors >= MAX_CONSECUTIVE_ERRORS then
+                        stopAutoRoll("Stopped due to repeated errors")
+                    else
+                        task.delay(1.5, function()
+                            processRollLoop(currentRunId)
+                        end)
+                    end
+                end
+            end)
+        else
+            consecutiveErrors = consecutiveErrors + 1
+            if consecutiveErrors >= MAX_CONSECUTIVE_ERRORS then
+                stopAutoRoll("Stopped due to repeated errors")
+            else
+                task.delay(1, function()
+                    processRollLoop(currentRunId)
+                end)
+            end
+        end
+    end)
+end
+
+RollTab:Toggle({
+    Title = "Auto Roll & Equip",
+    Desc = "Automatically rolls auras, equips them, and replaces lowest aura if inventory is full",
+    Value = false,
+    Callback = function(state)
+        autoRoll = state
+        if state then
+            runId = runId + 1
+            consecutiveErrors = 0
+            isBusy = false
+            processRollLoop(runId)
+        else
+            runId = runId + 1
+            isBusy = false
+        end
+    end
+})
