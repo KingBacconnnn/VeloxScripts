@@ -1,0 +1,202 @@
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local player = Players.LocalPlayer
+
+local targetCFrame = CFrame.new(-416.992035, 1236.44336, -4689.02979, 0, 0, 1, 0, 1, 0, -1, 0, 0)
+local originalCFrame = nil
+local teleportLoop = nil
+
+local rebirthRemote = ReplicatedStorage:WaitForChild("WallhopRemotes"):WaitForChild("RebirthRequest")
+
+local auras = {
+    {name = "Scarlet Ruin", wins = 10, mult = 1.2},
+    {name = "Absolute Ego", wins = 25, mult = 1.4},
+    {name = "Ultra Instinct", wins = 100, mult = 1.6},
+    {name = "Divine Radiance", wins = 250, mult = 1.8},
+    {name = "Phantom Haze", wins = 750, mult = 2},
+    {name = "Shadow Chaos", wins = 2500, mult = 2.2},
+    {name = "Cyro Storm", wins = 7500, mult = 2.5},
+    {name = "Luminous Core", wins = 25000, mult = 2.8},
+    {name = "Crimson Surge", wins = 75000, mult = 3.2},
+    {name = "Void Heart", wins = 250000, mult = 3.6},
+    {name = "Cosmic Collapse", wins = 750000, mult = 4},
+    {name = "Inferno Pulse", wins = 2500000, mult = 5},
+    {name = "Cursed King", wins = 10000000, mult = 6}
+}
+
+local remoteFolder = ReplicatedStorage:WaitForChild("WallhopRemotes")
+local auraBuy = remoteFolder:WaitForChild("AuraBuy")
+local auraEquip = remoteFolder:WaitForChild("AuraEquip")
+
+local function getOwnedAuras()
+    local owned = player:GetAttribute("OwnedAuras") or ""
+    local tbl = {}
+    for name in string.gmatch(owned, "[^,]+") do
+        tbl[name] = true
+    end
+    return tbl
+end
+
+local function getEquippedAura()
+    return player:GetAttribute("EquippedAura") or ""
+end
+
+local function getWins()
+    return player:GetAttribute("Wins") or 0
+end
+
+local Window = WindUI:CreateWindow({
+    Title = "+1 Wall Hop Obby Escape",
+    Icon = "bot",
+    Folder = "AutoHub",
+    Theme = "Dark",
+    Size = UDim2.fromOffset(460, 420),
+})
+
+local ChangelogTab = Window:Tab({ Title = "Changelog", Icon = "list" })
+local EarnTab = Window:Tab({ Title = "Auto Earn Wins", Icon = "trophy" })
+local RebirthTab = Window:Tab({ Title = "Auto Rebirth", Icon = "zap" })
+local AuraTab = Window:Tab({ Title = "Auto Aura", Icon = "sparkles" })
+
+ChangelogTab:Paragraph({
+    Title = "Changelog",
+    Desc = "v1.0 - Combined Hub\n\n- Auto Earn Wins (Teleport)\n- Auto Rebirth\n- Auto Buy Aura\n- Auto Equip Best Aura\n\nAll toggles save state.",
+})
+
+local earnActive = false
+EarnTab:Toggle({
+    Title = "Auto Earn Wins",
+    Desc = "Automatically earns wins for you.",
+    Value = false,
+    Flag = "EarnWins",
+    Callback = function(state)
+        earnActive = state
+        if state then
+            local char = player.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                originalCFrame = char.HumanoidRootPart.CFrame
+            end
+            teleportLoop = task.spawn(function()
+                while earnActive do
+                    local char = player.Character
+                    if char and char:FindFirstChild("HumanoidRootPart") then
+                        char.HumanoidRootPart.CFrame = targetCFrame
+                    end
+                    task.wait(0.01)
+                end
+            end)
+        else
+            if teleportLoop then task.cancel(teleportLoop) end
+            if originalCFrame then
+                local char = player.Character
+                if char and char:FindFirstChild("HumanoidRootPart") then
+                    char.HumanoidRootPart.CFrame = originalCFrame
+                end
+                originalCFrame = nil
+            end
+        end
+    end,
+})
+
+local rebirthActive = false
+RebirthTab:Toggle({
+    Title = "Auto Rebirth",
+    Desc = "Automatically rebirths when the required level is reached.",
+    Value = false,
+    Flag = "Rebirth",
+    Callback = function(state)
+        rebirthActive = state
+        if state then
+            task.spawn(function()
+                while rebirthActive do
+                    local rebirths = player:GetAttribute("Rebirths") or 0
+                    local level = player:GetAttribute("Level") or 1
+                    local required = 10 + 10 * rebirths
+                    if level >= required then
+                        rebirthRemote:FireServer()
+                        task.wait(0.5)
+                    end
+                    task.wait(0.1)
+                end
+            end)
+        end
+    end,
+})
+
+local buyActive = false
+AuraTab:Toggle({
+    Title = "Auto Buy Aura",
+    Desc = "Automatically buys unowned auras when you have enough wins.",
+    Value = false,
+    Flag = "BuyAura",
+    Callback = function(state)
+        buyActive = state
+        if state then
+            task.spawn(function()
+                while buyActive do
+                    local owned = getOwnedAuras()
+                    local wins = getWins()
+                    for _, aura in ipairs(auras) do
+                        if not owned[aura.name] and wins >= aura.wins then
+                            auraBuy:FireServer(aura.name)
+                            task.wait(0.3)
+                        end
+                    end
+                    task.wait(2)
+                end
+            end)
+        end
+    end,
+})
+
+local equipActive = false
+AuraTab:Toggle({
+    Title = "Auto Equip Best Aura",
+    Desc = "Automatically equips the strongest aura you own.",
+    Value = false,
+    Flag = "EquipAura",
+    Callback = function(state)
+        equipActive = state
+        if state then
+            task.spawn(function()
+                while equipActive do
+                    local owned = getOwnedAuras()
+                    local current = getEquippedAura()
+                    local best = nil
+                    local bestMult = 0
+                    for _, aura in ipairs(auras) do
+                        if owned[aura.name] and aura.mult > bestMult then
+                            best = aura.name
+                            bestMult = aura.mult
+                        end
+                    end
+                    if best and best ~= current then
+                        auraEquip:FireServer(best)
+                        task.wait(0.5)
+                    end
+                    task.wait(2)
+                end
+            end)
+        end
+    end,
+})
+
+local TeleportConfig = Window.ConfigManager:CreateConfig("TeleportNewSettings")
+local RebirthConfig = Window.ConfigManager:CreateConfig("RebirthSettings")
+local AuraConfig = Window.ConfigManager:CreateConfig("AuraSettings")
+
+TeleportConfig:Load()
+RebirthConfig:Load()
+AuraConfig:Load()
+
+Window:OnClose(function()
+    earnActive = false
+    rebirthActive = false
+    buyActive = false
+    equipActive = false
+    if teleportLoop then task.cancel(teleportLoop) end
+    TeleportConfig:Save()
+    RebirthConfig:Save()
+    AuraConfig:Save()
+end)
