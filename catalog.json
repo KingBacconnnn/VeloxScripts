@@ -9,6 +9,51 @@
     "PlaceId": 0
   },
   {
+  "Name": "[🥳] Make a Party",
+  "Description": "Create your own party, invite others, and have fun together.",
+  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/MakeaParty",
+  "ImageAssetId": "rbxassetid://107516707934052",
+  "TagType": "HOT",
+  "LastUpdated": 1787466443,
+  "PlaceId": 82570142697239
+},
+{
+  "Name": "⚡ Power a City",
+  "Description": "Build and manage your city by generating power and expanding your empire.",
+  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/PoweraCity",
+  "ImageAssetId": "rbxassetid://108446142906731",
+  "TagType": "HOT",
+  "LastUpdated": 1787466443,
+  "PlaceId": 127475054933484
+},
+{
+  "Name": "Build an AI [💻 HACK]",
+  "Description": "Build and customize your own AI while unlocking new features and upgrades.",
+  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/BuildanAI",
+  "ImageAssetId": "rbxassetid://119924073988972",
+  "TagType": "HOT",
+  "LastUpdated": 1787466443,
+  "PlaceId": 84637477108843
+},
+{
+  "Name": "+1 Wall Hop Obby Escape",
+  "Description": "Jump, climb, and overcome challenging obstacles as you make your way to the escape.",
+  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/Wall%20Hop%20Obby%20Escape",
+  "ImageAssetId": "rbxassetid://89119135342886",
+  "TagType": "HOT",
+  "LastUpdated": 1787466443,
+  "PlaceId": 140462309938712
+},
+{
+  "Name": "Unscathed RNG",
+  "Description": "Test your luck, discover rare rewards, and see how far your RNG can take you.",
+  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/UnscathedRNG",
+  "ImageAssetId": "rbxassetid://73467955007228",
+  "TagType": "HOT",
+  "LastUpdated": 1787466443,
+  "PlaceId": 122951224417794
+},
+  {
     "Name": "+1 High Jump Power",
     "Description": "Boost your jump power and soar higher than ever.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/HighJumpPower",
@@ -73,10 +118,10 @@
   },
   {
     "Name": "Steal An Egg",
-    "Description": "Borrowed from Spiritual Gaming (shhh). Automates egg thievery while I fight for my life trying to bypass the anti-cheat for my own version. Use code DEMONSLAYER23!",
+    "Description": "Unbannable + Antikick tested and proven (made by me)",
     "RawUrl": "https://gist.githubusercontent.com/spiritualgaming1123-beep/f2c8c4009b2c4d4dda1b3d5fcb263ef3/raw/121ff8c9b59476a7a362b543edc61499e5832937/gistfile1.lua",
     "ImageAssetId": "rbxassetid://99167825730320",
-    "TagType": "HOT",
+    "TagType": "UPDATED",
     "LastUpdated": 1786885620,
     "PlaceId": 107778070777162
   },
