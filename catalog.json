@@ -118,8 +118,8 @@
   },
   {
     "Name": "Steal An Egg",
-    "Description": "Unbannable + Antikick tested and proven (made by me)",
-    "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/StealAnEgg",
+    "Description": "No Key Script (made by nightfall hub)",
+    "RawUrl": "loadstring(game:HttpGet("https://pastefy.app/J29hE5fR/raw"))()",
     "ImageAssetId": "rbxassetid://99167825730320",
     "TagType": "UPDATED",
     "LastUpdated": 1787520255,
