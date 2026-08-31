@@ -9,65 +9,65 @@
     "PlaceId": 0
   },
   {
-  "Name": "Grow a Chicken Fighter",
-  "Description": "Grow your chicken, upgrade it up, and have fun battling with friends!",
-  "RawUrl": "https://raw.githubusercontent.com/LynX99-9/komtolmmek2script/main/CyraaHub.lua",
-  "ImageAssetId": "rbxassetid://107556080423499",
-  "TagType": "HOT",
-  "LastUpdated": 1788152251,
-  "PlaceId": 94640181989498
+    "Name": "Grow a Chicken Fighter",
+    "Description": "Grow your chicken, upgrade it up, and have fun battling with friends!",
+    "RawUrl": "https://raw.githubusercontent.com/LynX99-9/komtolmmek2script/main/CyraaHub.lua",
+    "ImageAssetId": "rbxassetid://107556080423499",
+    "TagType": "HOT",
+    "LastUpdated": 1788152251,
+    "PlaceId": 0
   },
   {
-  "Name": "[🥳] Make a Party",
-  "Description": "Create your own party, invite others, and have fun together.",
-  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/MakeaParty",
-  "ImageAssetId": "rbxassetid://107516707934052",
-  "TagType": "HOT",
-  "LastUpdated": 1787466443,
-  "PlaceId": 82570142697239
-},
-{
-  "Name": "⚡ Power a City",
-  "Description": "Build and manage your city by generating power and expanding your empire.",
-  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/PoweraCity",
-  "ImageAssetId": "rbxassetid://108446142906731",
-  "TagType": "HOT",
-  "LastUpdated": 1787466443,
-  "PlaceId": 127475054933484
-},
-{
-  "Name": "Build an AI [💻 HACK]",
-  "Description": "Build and customize your own AI while unlocking new features and upgrades.",
-  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/BuildanAI",
-  "ImageAssetId": "rbxassetid://119924073988972",
-  "TagType": "UPDATED",
-  "LastUpdated": 1787466443,
-  "PlaceId": 84637477108843
-},
-{
-  "Name": "+1 Wall Hop Obby Escape",
-  "Description": "Jump, climb, and overcome challenging obstacles as you make your way to the escape.",
-  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/Wall%20Hop%20Obby%20Escape",
-  "ImageAssetId": "rbxassetid://89119135342886",
-  "TagType": "HOT",
-  "LastUpdated": 1787466443,
-  "PlaceId": 140462309938712
-},
-{
-  "Name": "Unscathed RNG",
-  "Description": "Test your luck, discover rare rewards, and see how far your RNG can take you.",
-  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/UnscathedRNG",
-  "ImageAssetId": "rbxassetid://73467955007228",
-  "TagType": "HOT",
-  "LastUpdated": 1787466443,
-  "PlaceId": 122951224417794
-},
+    "Name": "[🥳] Make a Party",
+    "Description": "Create your own party, invite others, and have fun together.",
+    "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/MakeaParty",
+    "ImageAssetId": "rbxassetid://107516707934052",
+    "TagType": "NONE",
+    "LastUpdated": 1787466443,
+    "PlaceId": 82570142697239
+  },
+  {
+    "Name": "⚡ Power a City",
+    "Description": "Build and manage your city by generating power and expanding your empire.",
+    "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/PoweraCity",
+    "ImageAssetId": "rbxassetid://108446142906731",
+    "TagType": "NONE",
+    "LastUpdated": 1787466443,
+    "PlaceId": 127475054933484
+  },
+  {
+    "Name": "Build an AI [💻 HACK]",
+    "Description": "Build and customize your own AI while unlocking new features and upgrades.",
+    "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/BuildanAI",
+    "ImageAssetId": "rbxassetid://119924073988972",
+    "TagType": "NONE",
+    "LastUpdated": 1787466443,
+    "PlaceId": 84637477108843
+  },
+  {
+    "Name": "+1 Wall Hop Obby Escape",
+    "Description": "Jump, climb, and overcome challenging obstacles as you make your way to the escape.",
+    "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/Wall%20Hop%20Obby%20Escape",
+    "ImageAssetId": "rbxassetid://89119135342886",
+    "TagType": "NONE",
+    "LastUpdated": 1787466443,
+    "PlaceId": 140462309938712
+  },
+  {
+    "Name": "Unscathed RNG",
+    "Description": "Test your luck, discover rare rewards, and see how far your RNG can take you.",
+    "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/UnscathedRNG",
+    "ImageAssetId": "rbxassetid://73467955007228",
+    "TagType": "NONE",
+    "LastUpdated": 1787466443,
+    "PlaceId": 122951224417794
+  },
   {
     "Name": "+1 High Jump Power",
     "Description": "Boost your jump power and soar higher than ever.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/HighJumpPower",
     "ImageAssetId": "rbxassetid://121505296815495",
-    "TagType": "HOT",
+    "TagType": "NONE",
     "LastUpdated": 1787223474,
     "PlaceId": 83388257263676
   },
@@ -76,7 +76,7 @@
     "Description": "Swing through the air and escape with powerful web moves.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/WebSwingEscape",
     "ImageAssetId": "rbxassetid://129142535236862",
-    "TagType": "HOT",
+    "TagType": "NONE",
     "LastUpdated": 1787223474,
     "PlaceId": 110668201954727
   },
@@ -85,7 +85,7 @@
     "Description": "Build your toll farm and start collecting rewards.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/MyTollFarm",
     "ImageAssetId": "rbxassetid://82564760235836",
-    "TagType": "HOT",
+    "TagType": "NONE",
     "LastUpdated": 1787223474,
     "PlaceId": 96425088123775
   },
@@ -94,7 +94,7 @@
     "Description": "Gravity does the work, this script does the rest. Easiest brainrot you'll ever farm without lifting a finger.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/FallForBrainrots",
     "ImageAssetId": "rbxassetid://83344840395172",
-    "TagType": "HOT",
+    "TagType": "NONE",
     "LastUpdated": 1787141569,
     "PlaceId": 86368783421928
   },
@@ -103,7 +103,7 @@
     "Description": "Kidnap—I mean, tactically acquire—soccer players with zero effort. Easy pickups, absolutely zero cardio required.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/JumpToStealSoccerPlayers",
     "ImageAssetId": "rbxassetid://139973393465382",
-    "TagType": "HOT",
+    "TagType": "NONE",
     "LastUpdated": 1787141569,
     "PlaceId": 133294838637122
   },
@@ -112,7 +112,7 @@
     "Description": "Finally, you can tell your mom you touched grass today. Automates the cutting so you can get ripped while being entirely unproductive.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/CutGrassAdventure",
     "ImageAssetId": "rbxassetid://115885312977657",
-    "TagType": "UPDATED",
+    "TagType": "NONE",
     "LastUpdated": 1786885620,
     "PlaceId": 90086669327265
   },
@@ -121,7 +121,7 @@
     "Description": "Automates those satisfying crunchy jumps so you can escape without your real-life legs cramping up. Absolute ASMR bliss.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/JumpCrunchyASMREscape",
     "ImageAssetId": "rbxassetid://70770599354986",
-    "TagType": "HOT",
+    "TagType": "NONE",
     "LastUpdated": 1786885620,
     "PlaceId": 83264774625004
   },
@@ -130,7 +130,7 @@
     "Description": "No Key Script (made by night hub) my script is on development so use this as temporary.",
     "RawUrl": "https://pastefy.app/J29hE5fR/raw",
     "ImageAssetId": "rbxassetid://99167825730320",
-    "TagType": "UPDATED",
+    "TagType": "NONE",
     "LastUpdated": 1787520255,
     "PlaceId": 107778070777162
   },
@@ -292,7 +292,7 @@
     "Description": "Executes with a slight delay (it's thinking, okay?), but works perfectly to automate the RNG chaos of base building.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/buildabaseRNG",
     "ImageAssetId": "rbxassetid://128276768200520",
-    "TagType": "UPDATED",
+    "TagType": "NONE",
     "LastUpdated": 1787134306,
     "PlaceId": 99108783264633
   },
