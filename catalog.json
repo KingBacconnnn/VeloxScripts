@@ -9,6 +9,15 @@
     "PlaceId": 0
   },
   {
+  "Name": "Grow a Chicken Fighter",
+  "Description": "Grow your chicken, upgrade it up, and have fun battling with friends!",
+  "RawUrl": "https://raw.githubusercontent.com/LynX99-9/komtolmmek2script/main/CyraaHub.lua",
+  "ImageAssetId": "rbxassetid://107556080423499",
+  "TagType": "HOT",
+  "LastUpdated": 1788152251,
+  "PlaceId": 94640181989498
+  },
+  {
   "Name": "[🥳] Make a Party",
   "Description": "Create your own party, invite others, and have fun together.",
   "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/MakeaParty",
