@@ -9,6 +9,15 @@
     "PlaceId": 0
   },
   {
+  "Name": "[Northern Lands] Dungeon Quest Reborn",
+  "Description": "Explore the Northern Lands in Dungeon Quest Reborn, battle powerful enemies, conquer challenging dungeons, and grow stronger with your friends!",
+  "RawUrl": "https://raw.githubusercontent.com/joustingmatch/Ouroboros/main/loader.lua",
+  "ImageAssetId": "rbxassetid://124969666393674",
+  "TagType": "HOT",
+  "LastUpdated": 1788171554,
+  "PlaceId": 77649408247578
+  },
+  {
     "Name": "Grow a Chicken Fighter",
     "Description": "Grow your chicken, upgrade it up, and have fun battling with friends!",
     "RawUrl": "https://raw.githubusercontent.com/LynX99-9/komtolmmek2script/main/CyraaHub.lua",
