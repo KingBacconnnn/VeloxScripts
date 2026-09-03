@@ -9,6 +9,33 @@
     "PlaceId": 0
   },
   {
+  "Name": "Pull An Egg",
+  "Description": "Pull unique eggs and discover what’s waiting inside! This game is still in beta, so you may encounter some bugs.",
+  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/PullAnEgg",
+  "ImageAssetId": "rbxassetid://101381322698409",
+  "TagType": "HOT",
+  "LastUpdated": 1788441412,
+  "PlaceId": 70640255604878
+},
+{
+  "Name": "Steal A Lucky Egg",
+  "Description": "Steal lucky eggs, collect exciting rewards, and test your luck! The game is still in beta, so some bugs may occur.",
+  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/StealALuckyEgg",
+  "ImageAssetId": "rbxassetid://78239349477965",
+  "TagType": "HOT",
+  "LastUpdated": 1788441412,
+  "PlaceId": 123698673940079
+},
+{
+  "Name": "Jump for Animals!",
+  "Description": "Jump, explore, and have fun while discovering adorable animals!",
+  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/JumpforAnimals",
+  "ImageAssetId": "rbxassetid://114795309648965",
+  "TagType": "HOT",
+  "LastUpdated": 1788441412,
+  "PlaceId": 126870639873289
+}, 
+  {
   "Name": "[Northern Lands] Dungeon Quest Reborn",
   "Description": "Explore the Northern Lands in Dungeon Quest Reborn, battle powerful enemies, conquer challenging dungeons, and grow stronger with your friends!",
   "RawUrl": "https://raw.githubusercontent.com/joustingmatch/Ouroboros/main/loader.lua",
