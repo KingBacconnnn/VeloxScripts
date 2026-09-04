@@ -9,6 +9,15 @@
     "PlaceId": 0
   },
   {
+  "Name": "[🎉UPD 2] Anime Dice",
+  "Description": "🎲 Roll the dice and discover exciting anime-themed rewards! Have fun, test your luck, and see what you can get. ✨",
+  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/AnimeDice",
+  "ImageAssetId": "rbxassetid://77485736580238",
+  "TagType": "HOT",
+  "LastUpdated": 1788494747,
+  "PlaceId": 113290951185459
+},
+  {
   "Name": "Pull An Egg",
   "Description": "Pull unique eggs and discover what’s waiting inside! This game is still in beta, so you may encounter some bugs.",
   "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/PullAnEgg",
