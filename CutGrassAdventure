@@ -1,5 +1,4 @@
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
-
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local CollectionService = game:GetService("CollectionService")
@@ -46,51 +45,35 @@ local SellRemote = ReplicatedStorage.Packages._Index["acecateer_knit@1.7.2"].kni
 local ClickRequestedRemote = ReplicatedStorage.Packages._Index["acecateer_knit@1.7.2"].knit.Services.StrengthService.RE.ClickRequested
 
 local rarityOrder = {
-    "Singularity",
-    "Omniversal",
-    "Empyrean",
-    "Primordial",
-    "Ascendant",
-    "Cosmic",
-    "Transcendent",
-    "Eternal",
-    "Celestial",
-    "Divine",
-    "Godly",
-    "Secret",
-    "Mythic",
-    "Legendary",
-    "Epic",
-    "Rare",
-    "Uncommon",
-    "Common"
+    "Genesis", "Infinite", "Exalted", "Singularity", "Omniversal", "Empyrean",
+    "Primordial", "Ascendant", "Cosmic", "Transcendent", "Eternal",
+    "Celestial", "Divine", "Godly", "Secret", "Mythic",
+    "Legendary", "Epic", "Rare", "Uncommon", "Common"
 }
 local allRarities = {
-    "Common",
-    "Uncommon",
-    "Rare",
-    "Epic",
-    "Legendary",
-    "Mythic",
-    "Secret",
-    "Godly",
-    "Divine",
-    "Celestial",
-    "Eternal",
-    "Transcendent",
-    "Cosmic",
-    "Ascendant",
-    "Primordial",
-    "Empyrean",
-    "Omniversal",
-    "Singularity"
+    "Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic",
+    "Secret", "Godly", "Divine", "Celestial", "Eternal",
+    "Transcendent", "Cosmic", "Ascendant", "Primordial",
+    "Empyrean", "Omniversal", "Singularity", "Exalted", "Infinite", "Genesis"
 }
-local upgradeDisplayNames = { "Mobility", "Capacity", "Agility", "Range" }
+
+local upgradeDisplayNames = {
+    "Mobility",
+    "Capacity",
+    "Agility",
+    "Range",
+    "Luck",
+    "Magnet",
+    "Walk Speed"
+}
 local displayToInternal = {
     ["Mobility"] = "Speed",
     ["Capacity"] = "Carry",
     ["Agility"] = "Attack Speed",
-    ["Range"] = "Attack Range"
+    ["Range"] = "Attack Range",
+    ["Luck"] = "CraftChance",
+    ["Magnet"] = "LootPickupRadius",
+    ["Walk Speed"] = "WalkSpeed"
 }
 
 local relicNames = {}
@@ -129,6 +112,7 @@ local autoBuyAuraEnabled = false
 local autoEquipAuraEnabled = false
 local auraState = nil
 local isBusyAura = false
+local ignoredAuras = {}   -- temporary cooldown after failed buy
 
 local autoBuyCutterEnabled = false
 local autoEquipCutterEnabled = false
@@ -136,12 +120,19 @@ local cuttersData = {}
 local ownedCutters = {}
 local currentCutter = ""
 local isBuyingCutter = false
+local cutterBuyTimeout = nil
+local ignoredCutters = {}
 
 local selectedUpgrades = { "Mobility" }
 local autoUpgradesEnabled = false
-local upgradePrices = { ["Speed"] = math.huge, ["Carry"] = math.huge, ["Attack Speed"] = math.huge, ["Attack Range"] = math.huge }
-local upgradeMaxed = { ["Speed"] = false, ["Carry"] = false, ["Attack Speed"] = false, ["Attack Range"] = false }
+local upgradePrices = {}
+local upgradeMaxed = {}
 local money = 0
+
+for _, internal in pairs(displayToInternal) do
+    upgradePrices[internal] = math.huge
+    upgradeMaxed[internal] = false
+end
 
 local autoCollectLootEnabled = false
 local selectedLootRarityMap = { ["Common"] = true }
@@ -152,6 +143,36 @@ local autoRebirthEnabled = false
 local rebirthCooldown = 0
 
 local autoClickEnabled = false
+
+local suffixes = {
+    ["K"] = 3, ["M"] = 6, ["B"] = 9, ["T"] = 12,
+    ["QA"] = 15, ["QI"] = 18, ["SX"] = 21, ["SP"] = 24,
+    ["OC"] = 27, ["NO"] = 30, ["DC"] = 33, ["UD"] = 36,
+    ["DD"] = 39, ["TD"] = 42, ["QT"] = 45, ["QN"] = 48,
+    ["QD"] = 51, ["SD"] = 54, ["OD"] = 57, ["ND"] = 60,
+    ["VG"] = 63
+}
+
+local function parseMoneyString(str)
+    if type(str) == "number" then return str end
+    if type(str) ~= "string" then return nil end
+    str = str:gsub(",", ""):gsub("%$", ""):gsub("%s+", "")
+    local plain = tonumber(str)
+    if plain then return plain end
+    local num, suffix = str:match("^([%d%.]+)([%a]+)$")
+    if num and suffix then
+        local base = tonumber(num)
+        local power = suffixes[string.upper(suffix)]
+        if base and power then return base * (10 ^ power) end
+    end
+    local sciBase, sciExp = str:match("^([%d%.]+)e%+?(%d+)$")
+    if sciBase and sciExp then
+        local base = tonumber(sciBase)
+        local exp = tonumber(sciExp)
+        if base and exp then return base * (10 ^ exp) end
+    end
+    return nil
+end
 
 local function getHRP()
     local character = LocalPlayer.Character
@@ -189,7 +210,7 @@ local TabStrength = Window:Tab({ Title = "Strength", Icon = "zap" })
 
 TabChangelog:Paragraph({
     Title = "Changelog",
-    Desc = "v1.0 - Initial release of combined Auto Farm Hub.\n\n- Auto Rebirth\n- Relic crafting & equip\n- Aura buying & equip\n- Cutter buying & equip\n- Upgrades auto purchase\n- Loot collection with rarity selection\n- Auto clicker for Strength\n\nAll features run independently and can be toggled on/off.",
+    Desc = "v1.7 - Updated aura auto-buy/equip with world-lock and event-only handling.",
     Color = "Green"
 })
 
@@ -235,33 +256,37 @@ TabRelics:Toggle({
 
 TabAuras:Toggle({
     Title = "Auto Buy Aura",
-    Desc = "Automatically buys the cheapest aura you can afford every 0.5 seconds.",
+    Desc = "Automatically buys the cheapest affordable aura (excluding event-only).",
     Value = false,
     Callback = function(state) autoBuyAuraEnabled = state end
 })
 TabAuras:Toggle({
     Title = "Auto Equip Best Aura",
-    Desc = "Automatically equips your strongest owned aura every 0.1 seconds.",
+    Desc = "Automatically equips your strongest owned aura.",
     Value = false,
     Callback = function(state) autoEquipAuraEnabled = state end
 })
 
 TabCutters:Toggle({
     Title = "Auto Buy Cutter",
-    Desc = "Automatically buys the cheapest cutter you can afford every 0.5 seconds.",
+    Desc = "Automatically buys the cheapest unlocked cutter.",
     Value = false,
-    Callback = function(state) autoBuyCutterEnabled = state end
+    Callback = function(state)
+        autoBuyCutterEnabled = state
+    end
 })
 TabCutters:Toggle({
     Title = "Auto Equip Best Cutter",
-    Desc = "Automatically equips your strongest owned cutter every 0.1 seconds.",
+    Desc = "Automatically equips your strongest owned cutter.",
     Value = false,
-    Callback = function(state) autoEquipCutterEnabled = state end
+    Callback = function(state)
+        autoEquipCutterEnabled = state
+    end
 })
 
 TabUpgrades:Dropdown({
     Title = "Upgrades",
-    Desc = "Choose which upgrades to purchase: Mobility, Capacity, Agility, or Range.",
+    Desc = "Choose which upgrades to purchase.",
     Values = upgradeDisplayNames,
     Value = { "Mobility" },
     Multi = true,
@@ -319,6 +344,8 @@ TabStrength:Toggle({
     Callback = function(state) autoClickEnabled = state end
 })
 
+-- ====== Service connections and data update ======
+
 local function refreshEssence()
     pcall(function()
         DataService:GetData("Essence"):andThen(function(v) if type(v) == "number" then Essence = v end end):catch(function() end)
@@ -335,33 +362,61 @@ pcall(function()
 end)
 refreshEssence()
 
-local function updateAuraState(state) if type(state) == "table" then auraState = state end end
+local function updateAuraState(state)
+    if type(state) == "table" then
+        auraState = state
+    end
+end
 local function refreshAuraState()
     pcall(function()
         local res = AuraService:GetState()
-        if type(res) == "table" and res.andThen then res:andThen(updateAuraState):catch(function() end)
-        elseif type(res) == "table" then updateAuraState(res) end
+        if type(res) == "table" and res.andThen then
+            res:andThen(updateAuraState):catch(function() end)
+        elseif type(res) == "table" then
+            updateAuraState(res)
+        end
     end)
 end
-if AuraService.StateUpdated then AuraService.StateUpdated:Connect(updateAuraState) end
+if AuraService.StateUpdated then
+    AuraService.StateUpdated:Connect(updateAuraState)
+end
 
 local function updateCuttersState(state)
     if type(state) == "table" then
-        if type(state.CuttersData) == "table" then cuttersData = state.CuttersData end
-        if type(state.OwnedCutters) == "table" then ownedCutters = state.OwnedCutters end
-        if type(state.CurrentCutter) == "string" then currentCutter = state.CurrentCutter end
+        if type(state.CuttersData) == "table" then
+            cuttersData = state.CuttersData
+        end
+        if type(state.OwnedCutters) == "table" then
+            ownedCutters = state.OwnedCutters
+        end
+        if type(state.CurrentCutter) == "string" then
+            currentCutter = state.CurrentCutter
+        end
     end
 end
+
 local function refreshCuttersState()
     pcall(function()
-        CuttersShopService:GetShopState():andThen(updateCuttersState):catch(function() end)
+        local res = CuttersShopService:GetShopState()
+        if type(res) == "table" and res.andThen then
+            res:andThen(updateCuttersState):catch(function() end)
+        elseif type(res) == "table" then
+            updateCuttersState(res)
+        end
     end)
 end
+
 if CuttersShopService.ShopInited then
     CuttersShopService.ShopInited:Connect(function(owned, data, equipped, robux)
-        updateCuttersState({ OwnedCutters = owned, CuttersData = data, CurrentCutter = equipped, CutterRobuxPrices = robux })
+        updateCuttersState({
+            OwnedCutters = owned,
+            CuttersData = data,
+            CurrentCutter = equipped,
+            CutterRobuxPrices = robux
+        })
     end)
 end
+
 if CuttersShopService.ShopUpdated then
     CuttersShopService.ShopUpdated:Connect(function(owned, equipped)
         if type(owned) == "table" then ownedCutters = owned end
@@ -369,16 +424,7 @@ if CuttersShopService.ShopUpdated then
     end)
 end
 
-UpgradesService.SpeedUpgradeUpdated:Connect(function(_, _, cost, max) upgradePrices["Speed"] = tonumber(cost) or math.huge; upgradeMaxed["Speed"] = max == true end)
-UpgradesService.CarryUpgradeUpdated:Connect(function(_, _, cost, max) upgradePrices["Carry"] = tonumber(cost) or math.huge; upgradeMaxed["Carry"] = max == true end)
-UpgradesService.AttackSpeedUpgradeUpdated:Connect(function(_, _, cost, max) upgradePrices["Attack Speed"] = tonumber(cost) or math.huge; upgradeMaxed["Attack Speed"] = max == true end)
-UpgradesService.AttackRangeUpgradeUpdated:Connect(function(_, _, cost, max) upgradePrices["Attack Range"] = tonumber(cost) or math.huge; upgradeMaxed["Attack Range"] = max == true end)
-pcall(function()
-    UpgradesService:RequestStateSync():catch(function() end)
-end)
-
-DataService:GetData("Money"):andThen(function(v) if type(v) == "number" then money = v end end):catch(function() end)
-DataService.UpdateMoney:Connect(function(v) if type(v) == "number" then money = v end end)
+refreshCuttersState()
 
 local function updateBackpackFull(state)
     if type(state) == "table" then
@@ -397,7 +443,235 @@ pcall(function()
 end)
 refreshBackpackFull()
 
-task.spawn(function() while true do refreshEssence(); task.wait(2) end end)
+-- Money tracking
+local leaderstats = LocalPlayer:FindFirstChild("leaderstats")
+local moneyStat = leaderstats and leaderstats:FindFirstChild("Money")
+if moneyStat then
+    local function updateMoneyFromStat()
+        local parsed = parseMoneyString(moneyStat.Value)
+        if parsed then money = parsed end
+    end
+    updateMoneyFromStat()
+    moneyStat.Changed:Connect(updateMoneyFromStat)
+else
+    DataService:GetData("Money"):andThen(function(v) if type(v) == "number" then money = v end end):catch(function() end)
+    DataService.UpdateMoney:Connect(function(v) if type(v) == "number" then money = v end end)
+end
+
+-- Upgrades price tracking
+local function updatePrice(internal, cost, max)
+    upgradePrices[internal] = parseMoneyString(cost) or math.huge
+    upgradeMaxed[internal] = max == true
+end
+
+UpgradesService.SpeedUpgradeUpdated:Connect(function(_, _, cost, max) updatePrice("Speed", cost, max) end)
+UpgradesService.CarryUpgradeUpdated:Connect(function(_, _, cost, max) updatePrice("Carry", cost, max) end)
+UpgradesService.AttackSpeedUpgradeUpdated:Connect(function(_, _, cost, max) updatePrice("Attack Speed", cost, max) end)
+UpgradesService.AttackRangeUpgradeUpdated:Connect(function(_, _, cost, max) updatePrice("Attack Range", cost, max) end)
+pcall(function()
+    UpgradesService.CraftChanceUpgradeUpdated:Connect(function(_, _, cost, max) updatePrice("CraftChance", cost, max) end)
+end)
+pcall(function()
+    UpgradesService.LootPickupRadiusUpgradeUpdated:Connect(function(_, _, cost, max) updatePrice("LootPickupRadius", cost, max) end)
+end)
+pcall(function()
+    UpgradesService.WalkSpeedUpgradeUpdated:Connect(function(_, _, cost, max) updatePrice("WalkSpeed", cost, max) end)
+end)
+pcall(function()
+    UpgradesService:RequestStateSync():catch(function() end)
+end)
+
+-- ====== Helper functions for cutters ======
+local function isCutterWorldUnlocked(name)
+    local data = cuttersData[name]
+    if not data then return false end
+    local requiredWorld = tonumber(data.RequiredWorld) or tonumber(data.World) or 1
+    local highestWorld = tonumber(LocalPlayer:GetAttribute("HighestVisitedWorld"))
+                     or tonumber(LocalPlayer:GetAttribute("World"))
+                     or tonumber(LocalPlayer:GetAttribute("HighestWorld"))
+                     or tonumber(LocalPlayer:GetAttribute("CurrentWorld"))
+                     or 1
+    return highestWorld >= requiredWorld
+end
+
+local function getCutterPrice(name)
+    local data = cuttersData[name]
+    if not data then return math.huge end
+    local price = data.Price
+    if type(price) == "number" then return price end
+    return parseMoneyString(price) or math.huge
+end
+
+local function findCheapestAffordableUnownedCutter()
+    local bestName, bestPrice = nil, math.huge
+    local currentTime = os.clock()
+    for name, data in pairs(cuttersData) do
+        if not ownedCutters[name] and (not ignoredCutters[name] or ignoredCutters[name] < currentTime) then
+            if isCutterWorldUnlocked(name) then
+                local price = getCutterPrice(name)
+                if price <= money and price < bestPrice then
+                    bestName = name
+                    bestPrice = price
+                end
+            end
+        end
+    end
+    return bestName
+end
+
+local function findBestOwnedCutter()
+    local bestName, bestDamage = nil, -math.huge
+    for name, data in pairs(cuttersData) do
+        if ownedCutters[name] then
+            local dmg = tonumber(data.DamageMult) or tonumber(data.Multiplier) or tonumber(data.Damage) or 0
+            if dmg > bestDamage then
+                bestDamage = dmg
+                bestName = name
+            end
+        end
+    end
+    return bestName
+end
+
+local function buyOrEquipCutter(name, isEquipping)
+    if isBuyingCutter then return end
+    isBuyingCutter = true
+    if cutterBuyTimeout then task.cancel(cutterBuyTimeout) end
+    cutterBuyTimeout = task.delay(5, function()
+        isBuyingCutter = false
+        cutterBuyTimeout = nil
+    end)
+
+    pcall(function()
+        local result = CuttersShopService:BuyCutter(name)
+        if type(result) == "table" and result.andThen then
+            result:andThen(function(success)
+                isBuyingCutter = false
+                if cutterBuyTimeout then task.cancel(cutterBuyTimeout) cutterBuyTimeout = nil end
+                if success == true then
+                    refreshCuttersState()
+                elseif not isEquipping then
+                    ignoredCutters[name] = os.clock() + 30
+                end
+            end):catch(function()
+                isBuyingCutter = false
+                if cutterBuyTimeout then task.cancel(cutterBuyTimeout) cutterBuyTimeout = nil end
+                if not isEquipping then
+                    ignoredCutters[name] = os.clock() + 30
+                end
+            end)
+        else
+            isBuyingCutter = false
+            if cutterBuyTimeout then task.cancel(cutterBuyTimeout) cutterBuyTimeout = nil end
+            if result == true then
+                refreshCuttersState()
+            elseif result == false and not isEquipping then
+                ignoredCutters[name] = os.clock() + 30
+            end
+        end
+    end)
+end
+
+-- ====== Aura helper functions (updated) ======
+local function isAuraWorldLocked(name)
+    local requiredWorld = AurasConfig.RequiredWorldByAuraId and AurasConfig.RequiredWorldByAuraId[name]
+    if not requiredWorld then return false end
+    -- If owned, it's not locked
+    if auraState and auraState.Items and auraState.Items[name] and auraState.Items[name].Owned then
+        return false
+    end
+    local highest = tonumber(LocalPlayer:GetAttribute("HighestVisitedWorld")) or 1
+    return highest < math.max(1, tonumber(requiredWorld))
+end
+
+local function isAuraOwned(name)
+    if not auraState or not auraState.Items then return false end
+    local item = auraState.Items[name]
+    return item and item.Owned == true
+end
+
+local function isAuraEquipped(name)
+    if not auraState or not auraState.Items then return false end
+    local item = auraState.Items[name]
+    return item and item.Equipped == true
+end
+
+local function findCheapestAffordableUnownedAura()
+    local bestName, bestPrice = nil, math.huge
+    local currentTime = os.clock()
+    for _, auraName in ipairs(auraNames) do
+        local auraData = AurasConfig.Items[auraName]
+        if auraData and not isAuraOwned(auraName) and not isAuraWorldLocked(auraName) then
+            -- Skip event-only auras for buying
+            if not auraData.EventOnly then
+                if not ignoredAuras[auraName] or ignoredAuras[auraName] < currentTime then
+                    local price = parseMoneyString(auraData.Price) or tonumber(auraData.Price) or 0
+                    if price <= money and price < bestPrice then
+                        bestName = auraName
+                        bestPrice = price
+                    end
+                end
+            end
+        end
+    end
+    return bestName
+end
+
+local function findBestOwnedAura()
+    local bestName, bestBoost = nil, -math.huge
+    for auraName, data in pairs(AurasConfig.Items) do
+        if isAuraOwned(auraName) then
+            local boost = tonumber(data.StrengthMultiplier) or 0
+            if boost > bestBoost then
+                bestBoost = boost
+                bestName = auraName
+            end
+        end
+    end
+    return bestName
+end
+
+local function buyOrToggleAura(auraName, isEquipping)
+    if isBusyAura then return end
+    isBusyAura = true
+    pcall(function()
+        local res = AuraService:BuyOrToggleAura(auraName)
+        if type(res) == "table" and res.andThen then
+            res:andThen(function(result)
+                isBusyAura = false
+                if type(result) == "table" and result.State then
+                    updateAuraState(result.State)
+                else
+                    refreshAuraState()
+                end
+                -- If buy failed and not equipping, add cooldown
+                if not isEquipping and (type(result) ~= "table" or not result.Success) then
+                    ignoredAuras[auraName] = os.clock() + 30
+                end
+            end):catch(function()
+                isBusyAura = false
+                if not isEquipping then
+                    ignoredAuras[auraName] = os.clock() + 30
+                end
+                refreshAuraState()
+            end)
+        else
+            isBusyAura = false
+            if type(res) == "table" and res.State then
+                updateAuraState(res.State)
+            else
+                refreshAuraState()
+            end
+            if not isEquipping and (type(res) ~= "table" or not res.Success) then
+                ignoredAuras[auraName] = os.clock() + 30
+            end
+        end
+    end)
+end
+
+-- ====== Loops (faster timings) ======
+
+task.spawn(function() while true do refreshEssence(); task.wait(1) end end)  -- was 2s, now 1s
 
 local function craftRelic(relicName)
     if isCrafting then return end
@@ -407,7 +681,7 @@ local function craftRelic(relicName)
     if Essence < cost then return end
     isCrafting = true
     pcall(function() StartCraftRemote:InvokeServer(id) end)
-    task.wait(0.5)
+    task.wait(0.2)  -- was 0.5s, now 0.2s
     isCrafting = false
     refreshEssence()
 end
@@ -418,7 +692,7 @@ task.spawn(function()
                 if autoCraftEnabled and not isCrafting then craftRelic(name) end
             end
         end
-        task.wait(0.5)
+        task.wait(0.2)  -- was 0.5s, now 0.2s
     end
 end)
 
@@ -499,7 +773,7 @@ end
 task.spawn(function()
     while true do
         autoEquipBestRelic()
-        task.wait(1)
+        task.wait(0.5)  -- was 1s, now 0.5s
     end
 end)
 
@@ -508,185 +782,102 @@ task.spawn(function()
         if autoCollectCraftedEnabled then
             pcall(function() ClaimCraftResultRemote:InvokeServer() end)
         end
-        task.wait(1)
+        task.wait(0.5)  -- was 1s, now 0.5s
     end
 end)
 
-local function isAuraWorldLocked(name)
-    local req = AurasConfig.RequiredWorldByAuraId and AurasConfig.RequiredWorldByAuraId[name]
-    if not req then return false end
-    local highest = tonumber(LocalPlayer:GetAttribute("HighestVisitedWorld")) or 1
-    return highest < math.max(1, tonumber(req))
-end
-local function isAuraOwned(name)
-    if not auraState or not auraState.Items then return false end
-    local item = auraState.Items[name]
-    return item and item.Owned == true
-end
-local function isAuraEquipped(name)
-    if not auraState or not auraState.Items then return false end
-    local item = auraState.Items[name]
-    return item and item.Equipped == true
-end
-local function findCheapestAffordableUnownedAura()
-    local bestName, bestPrice = nil, math.huge
-    for _, auraName in ipairs(auraNames) do
-        if not isAuraOwned(auraName) and not isAuraWorldLocked(auraName) then
-            local price = tonumber(AurasConfig.Items[auraName].Price) or 0
-            if price <= money and price < bestPrice then
-                bestName = auraName
-                bestPrice = price
-            end
-        end
-    end
-    return bestName
-end
-local function findBestOwnedAura()
-    local bestName, bestBoost = nil, -math.huge
-    for auraName, data in pairs(AurasConfig.Items) do
-        if isAuraOwned(auraName) then
-            local boost = tonumber(data.StrengthMultiplier) or 0
-            if boost > bestBoost then
-                bestBoost = boost
-                bestName = auraName
-            end
-        end
-    end
-    return bestName
-end
-local function buyOrToggleAura(auraName)
-    if isBusyAura then return end
-    isBusyAura = true
-    pcall(function()
-        local res = AuraService:BuyOrToggleAura(auraName)
-        if type(res) == "table" and res.andThen then
-            res:andThen(function(state)
-                isBusyAura = false
-                if type(state) == "table" and state.State then
-                    updateAuraState(state.State)
-                else
-                    refreshAuraState()
-                end
-            end):catch(function()
-                isBusyAura = false
-                refreshAuraState()
-            end)
-        else
-            isBusyAura = false
-            refreshAuraState()
-        end
-    end)
-end
+-- Aura loops
 task.spawn(function()
     while true do
-        if autoBuyAuraEnabled then
+        if autoBuyAuraEnabled and not isBusyAura then
             local name = findCheapestAffordableUnownedAura()
-            if name then buyOrToggleAura(name) end
+            if name then
+                buyOrToggleAura(name, false)
+            end
         end
-        task.wait(0.5)
+        task.wait(0.2)  -- was 0.5s, now 0.2s
     end
 end)
 task.spawn(function()
     while true do
-        if autoEquipAuraEnabled then
+        if autoEquipAuraEnabled and not isBusyAura then
             local best = findBestOwnedAura()
-            if best and not isAuraEquipped(best) then buyOrToggleAura(best) end
+            if best and not isAuraEquipped(best) then
+                buyOrToggleAura(best, true)
+            end
         end
-        task.wait(0.1)
+        task.wait(0.1)  -- already fast, keep
     end
 end)
 
-local function isCutterWorldUnlocked(name)
-    local data = cuttersData[name]
-    if not data then return false end
-    local requiredWorld = tonumber(data.RequiredWorld) or 1
-    local highestWorld = tonumber(LocalPlayer:GetAttribute("HighestVisitedWorld")) or 1
-    return highestWorld >= requiredWorld
-end
-local function findCheapestAffordableUnownedCutter()
-    local bestName, bestPrice = nil, math.huge
-    for name, data in pairs(cuttersData) do
-        if not ownedCutters[name] and isCutterWorldUnlocked(name) and not (data.HiddenUntilOwned == true) then
-            local price = tonumber(data.Price) or 0
-            if price <= money and price < bestPrice then
-                bestName = name
-                bestPrice = price
-            end
-        end
-    end
-    return bestName
-end
-local function findBestOwnedCutter()
-    local bestName, bestDamage = nil, -math.huge
-    for name, data in pairs(cuttersData) do
-        if ownedCutters[name] then
-            local dmg = tonumber(data.DamageMult) or 0
-            if dmg > bestDamage then
-                bestDamage = dmg
-                bestName = name
-            end
-        end
-    end
-    return bestName
-end
-local function buyCutter(name)
-    if isBuyingCutter then return end
-    isBuyingCutter = true
-    pcall(function()
-        CuttersShopService:BuyCutter(name):andThen(function()
-            isBuyingCutter = false
-            refreshCuttersState()
-        end):catch(function()
-            isBuyingCutter = false
-        end)
-    end)
-end
-refreshCuttersState()
+-- Cutter loops
 task.spawn(function()
     while true do
-        if autoBuyCutterEnabled then
+        if autoBuyCutterEnabled and not isBuyingCutter then
             local name = findCheapestAffordableUnownedCutter()
-            if name then buyCutter(name) end
+            if name then
+                buyOrEquipCutter(name, false)
+            end
         end
-        task.wait(0.5)
-    end
-end)
-task.spawn(function()
-    while true do
-        if autoEquipCutterEnabled then
-            local best = findBestOwnedCutter()
-            if best and best ~= currentCutter then buyCutter(best) end
-        end
-        task.wait(0.1)
+        task.wait(0.2)  -- was 0.5s, now 0.2s
     end
 end)
 
-local function fireUpgrade(internalName)
-    if internalName == "Speed" then
+task.spawn(function()
+    while true do
+        if autoEquipCutterEnabled and not isBuyingCutter then
+            local best = findBestOwnedCutter()
+            if best and best ~= currentCutter then
+                buyOrEquipCutter(best, true)
+            end
+        end
+        task.wait(0.2)  -- was 0.5s, now 0.2s
+    end
+end)
+
+-- Upgrade loop
+local function fireUpgrade(internal)
+    if internal == "Speed" then
         UpgradesService.SpeedButtonClicked:Fire()
-    elseif internalName == "Carry" then
+    elseif internal == "Carry" then
         UpgradesService.CarryButtonClicked:Fire()
-    elseif internalName == "Attack Speed" then
+    elseif internal == "Attack Speed" then
         UpgradesService.AttackSpeedButtonClicked:Fire()
-    elseif internalName == "Attack Range" then
+    elseif internal == "Attack Range" then
         UpgradesService.AttackRangeButtonClicked:Fire()
+    elseif internal == "CraftChance" then
+        UpgradesService.CraftChanceButtonClicked:Fire()
+    elseif internal == "LootPickupRadius" then
+        UpgradesService.LootPickupRadiusButtonClicked:Fire()
+    elseif internal == "WalkSpeed" then
+        UpgradesService.WalkSpeedButtonClicked:Fire()
     end
 end
+
 task.spawn(function()
     while true do
         if autoUpgradesEnabled then
             for _, displayName in ipairs(selectedUpgrades) do
                 local internal = displayToInternal[displayName]
                 if internal and not upgradeMaxed[internal] and money >= upgradePrices[internal] then
-                    fireUpgrade(internal)
-                    task.wait(0.1)
+                    if internal == "CraftChance" or internal == "LootPickupRadius" then
+                        local highestWorld = tonumber(LocalPlayer:GetAttribute("HighestVisitedWorld")) or 1
+                        if highestWorld >= 2 then
+                            fireUpgrade(internal)
+                            task.wait(0.1)
+                        end
+                    else
+                        fireUpgrade(internal)
+                        task.wait(0.1)
+                    end
                 end
             end
         end
-        task.wait(0.1)
+        task.wait(0.1)  -- already fast, keep
     end
 end)
 
+-- Loot collection
 local function getLootPriority(rarity)
     for i, r in ipairs(rarityOrder) do
         if r == rarity then return i end
@@ -715,7 +906,7 @@ local function triggerPrompt(prompt)
         fireproximityprompt(prompt)
     elseif prompt.InputHoldBegin then
         prompt:InputHoldBegin()
-        task.wait(0.1)
+        task.wait(0.05)  -- slightly faster
         prompt:InputHoldEnd()
     else
         pcall(function()
@@ -756,7 +947,7 @@ task.spawn(function()
             if backpackFull then
                 returnToSavedPosition()
                 while autoCollectLootEnabled and backpackFull do
-                    task.wait(1)
+                    task.wait(0.5)  -- faster wait when full
                     refreshBackpackFull()
                 end
                 if not autoCollectLootEnabled then break end
@@ -771,7 +962,7 @@ task.spawn(function()
                     if backpackFull then
                         returnToSavedPosition()
                         while autoCollectLootEnabled and backpackFull do
-                            task.wait(1)
+                            task.wait(0.5)
                             refreshBackpackFull()
                         end
                         if not autoCollectLootEnabled then break end
@@ -781,55 +972,56 @@ task.spawn(function()
                     local pos = getLootPosition(target)
                     local hrp = getHRP()
                     if not hrp then
-                        task.wait(0.2)
+                        task.wait(0.1)  -- reduced
                         break
                     end
                     hrp.CFrame = CFrame.new(pos + Vector3.new(0, 2, 0))
-                    task.wait(0.2)
+                    task.wait(0.1)  -- was 0.2s, now 0.1s
                     local prompt = findPrompt(target)
                     if prompt then triggerPrompt(prompt) end
-                    task.wait(0.2)
+                    task.wait(0.1)  -- was 0.2s, now 0.1s
                     if not isLootValid(target) then break end
                 end
             else
-                task.wait(0.2)
+                task.wait(0.1)  -- reduced
             end
         else
-            task.wait(0.2)
+            task.wait(0.1)  -- reduced
         end
     end
 end)
 
+-- Strength clicker
 task.spawn(function()
     while true do
         if autoClickEnabled then
             pcall(function()
                 ClickRequestedRemote:FireServer()
             end)
-            task.wait(0.01)
+            task.wait(0.005)  -- was 0.01s, now 0.005s (faster)
         else
-            task.wait(0.1)
+            task.wait(0.05)  -- was 0.1s, now 0.05s
         end
     end
 end)
 
+-- Rebirth
 task.spawn(function()
     while true do
         if autoRebirthEnabled then
-            if rebirthCooldown > 0 then
+            if rebirthCooldown <= 0 then
+                pcall(function()
+                    RebirtService:GetState():andThen(function(state)
+                        if type(state) == "table" and state.CanRebirth == true and state.IsMaxRebirth ~= true then
+                            RebirtService.RebirthButtonClicked:Fire()
+                            rebirthCooldown = 3
+                        end
+                    end):catch(function() end)
+                end)
+            else
                 rebirthCooldown = rebirthCooldown - 0.1
-                task.wait(0.1)
-                continue
             end
-            pcall(function()
-                RebirtService:GetState():andThen(function(state)
-                    if type(state) == "table" and state.CanRebirth == true and state.IsMaxRebirth ~= true then
-                        RebirtService.RebirthButtonClicked:Fire()
-                        rebirthCooldown = 3
-                    end
-                end):catch(function() end)
-            end)
         end
-        task.wait(0.1)
+        task.wait(0.05)  -- was 0.1s, now 0.05s
     end
 end)
