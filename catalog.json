@@ -9,6 +9,33 @@
     "PlaceId": 0
   },
   {
+  "Name": "[UPD 2] Sword Hunter",
+  "Description": "Hunt powerful swords, progress through the game, and automate your adventure with VeloxScripts.",
+  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/SwordHunter",
+  "ImageAssetId": "rbxassetid://72908050168979",
+  "TagType": "HOT",
+  "LastUpdated": 1788788403,
+  "PlaceId": 124641526243488
+},
+{
+  "Name": "[🛡CLANS] Pack RNG",
+  "Description": "Boost your Pack RNG progression with useful automation and quality-of-life features.",
+  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/PackRNG",
+  "ImageAssetId": "rbxassetid://91430682984365",
+  "TagType": "HOT",
+  "LastUpdated": 1788788403,
+  "PlaceId": 117752943664280
+},
+{
+  "Name": "🌌 Agartha 🌌 Mog or Die",
+  "Description": "Explore Agartha, progress faster, and enjoy convenient automation for your Mog or Die gameplay.",
+  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/MogorDie",
+  "ImageAssetId": "rbxassetid://74234738636805",
+  "TagType": "HOT",
+  "LastUpdated": 1788788403,
+  "PlaceId": 130641102725850
+}
+  {
   "Name": "[🎉UPD 3] Anime Dice",
   "Description": "🎲 Roll the dice and discover exciting anime-themed rewards! Have fun, test your luck, and see what you can get. ✨",
   "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/AnimeDice",
