@@ -1,7 +1,7 @@
 [
   {
     "Name": "✈️ Paper Plane For Brainrots",
-    "Description": "One toggle to automate the farm. Sit back, relax, and let your actual brain rot while the script does all the heavy lifting.",
+    "Description": "Automates farming so you can sit back and let the script handle the work.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/PaperPlaneforBrainrots",
     "ImageAssetId": "rbxassetid://120627766450661",
     "TagType": "NONE",
@@ -9,80 +9,80 @@
     "PlaceId": 0
   },
   {
-  "Name": "[UPD 2] Sword Hunter",
-  "Description": "Hunt powerful swords, progress through the game, and automate your adventure with VeloxScripts.",
-  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/SwordHunter",
-  "ImageAssetId": "rbxassetid://72908050168979",
-  "TagType": "HOT",
-  "LastUpdated": 1788788403,
-  "PlaceId": 124641526243488
-},
-{
-  "Name": "[🛡CLANS] Pack RNG",
-  "Description": "Boost your Pack RNG progression with useful automation and quality-of-life features.",
-  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/PackRNG",
-  "ImageAssetId": "rbxassetid://91430682984365",
-  "TagType": "HOT",
-  "LastUpdated": 1788788403,
-  "PlaceId": 117752943664280
-},
-{
-  "Name": "🌌 Agartha 🌌 Mog or Die",
-  "Description": "Explore Agartha, progress faster, and enjoy convenient automation for your Mog or Die gameplay.",
-  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/MogorDie",
-  "ImageAssetId": "rbxassetid://74234738636805",
-  "TagType": "HOT",
-  "LastUpdated": 1788788403,
-  "PlaceId": 130641102725850
-}, 
+    "Name": "[UPD 2] Sword Hunter",
+    "Description": "Hunt powerful swords, progress through the game, and automate your adventure with useful features.",
+    "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/SwordHunter",
+    "ImageAssetId": "rbxassetid://72908050168979",
+    "TagType": "HOT",
+    "LastUpdated": 1788788403,
+    "PlaceId": 124641526243488
+  },
   {
-  "Name": "[🎉UPD 3] Anime Dice",
-  "Description": "🎲 Roll the dice and discover exciting anime-themed rewards! Have fun, test your luck, and see what you can get. ✨",
-  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/AnimeDice",
-  "ImageAssetId": "rbxassetid://77485736580238",
-  "TagType": "UPDATED",
-  "LastUpdated": 1788730396,
-  "PlaceId": 113290951185459
-},
+    "Name": "[🛡CLANS] Pack RNG",
+    "Description": "Improve your Pack RNG progression with automation and convenient quality-of-life features.",
+    "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/PackRNG",
+    "ImageAssetId": "rbxassetid://91430682984365",
+    "TagType": "HOT",
+    "LastUpdated": 1788788403,
+    "PlaceId": 117752943664280
+  },
   {
-  "Name": "Pull An Egg",
-  "Description": "Pull unique eggs and discover what’s waiting inside! This game is still in beta, so you may encounter some bugs.",
-  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/PullAnEgg",
-  "ImageAssetId": "rbxassetid://101381322698409",
-  "TagType": "HOT",
-  "LastUpdated": 1788441412,
-  "PlaceId": 70640255604878
-},
-{
-  "Name": "Steal A Lucky Egg",
-  "Description": "Steal lucky eggs, collect exciting rewards, and test your luck! The game is still in beta, so some bugs may occur.",
-  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/StealALuckyEgg",
-  "ImageAssetId": "rbxassetid://78239349477965",
-  "TagType": "HOT",
-  "LastUpdated": 1788441412,
-  "PlaceId": 123698673940079
-},
-{
-  "Name": "Jump for Animals!",
-  "Description": "Jump, explore, and have fun while discovering adorable animals!",
-  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/JumpforAnimals",
-  "ImageAssetId": "rbxassetid://114795309648965",
-  "TagType": "HOT",
-  "LastUpdated": 1788441412,
-  "PlaceId": 126870639873289
-}, 
+    "Name": "🌌 Agartha 🌌 Mog or Die",
+    "Description": "Explore Agartha, progress through the game, and use convenient automation features to make your journey easier.",
+    "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/MogorDie",
+    "ImageAssetId": "rbxassetid://74234738636805",
+    "TagType": "HOT",
+    "LastUpdated": 1788788403,
+    "PlaceId": 130641102725850
+  },
   {
-  "Name": "[Northern Lands] Dungeon Quest Reborn",
-  "Description": "Explore the Northern Lands in Dungeon Quest Reborn, battle powerful enemies, conquer challenging dungeons, and grow stronger with your friends!",
-  "RawUrl": "https://raw.githubusercontent.com/joustingmatch/Ouroboros/main/loader.lua",
-  "ImageAssetId": "rbxassetid://124969666393674",
-  "TagType": "HOT",
-  "LastUpdated": 1788171554,
-  "PlaceId": 77649408247578
+    "Name": "[🎉UPD 3] Anime Dice",
+    "Description": "Roll the dice, discover anime-themed rewards, and test your luck with fun automation features. ✨",
+    "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/AnimeDice",
+    "ImageAssetId": "rbxassetid://77485736580238",
+    "TagType": "UPDATED",
+    "LastUpdated": 1788730396,
+    "PlaceId": 113290951185459
+  },
+  {
+    "Name": "Pull An Egg",
+    "Description": "Pull unique eggs, discover exciting rewards, and explore what's waiting inside. Currently in beta.",
+    "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/PullAnEgg",
+    "ImageAssetId": "rbxassetid://101381322698409",
+    "TagType": "HOT",
+    "LastUpdated": 1788441412,
+    "PlaceId": 70640255604878
+  },
+  {
+    "Name": "Steal A Lucky Egg",
+    "Description": "Collect lucky eggs, discover rewards, and test your luck with convenient automation features. Currently in beta.",
+    "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/StealALuckyEgg",
+    "ImageAssetId": "rbxassetid://78239349477965",
+    "TagType": "HOT",
+    "LastUpdated": 1788441412,
+    "PlaceId": 123698673940079
+  },
+  {
+    "Name": "Jump for Animals!",
+    "Description": "Jump, explore, and discover adorable animals while progressing through the game.",
+    "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/JumpforAnimals",
+    "ImageAssetId": "rbxassetid://114795309648965",
+    "TagType": "HOT",
+    "LastUpdated": 1788441412,
+    "PlaceId": 126870639873289
+  },
+  {
+    "Name": "[Northern Lands] Dungeon Quest Reborn",
+    "Description": "Explore the Northern Lands, battle powerful enemies, conquer challenging dungeons, and grow stronger with your friends.",
+    "RawUrl": "https://raw.githubusercontent.com/joustingmatch/Ouroboros/main/loader.lua",
+    "ImageAssetId": "rbxassetid://124969666393674",
+    "TagType": "HOT",
+    "LastUpdated": 1788171554,
+    "PlaceId": 77649408247578
   },
   {
     "Name": "Grow a Chicken Fighter",
-    "Description": "Grow your chicken, upgrade it up, and have fun battling with friends!",
+    "Description": "Grow and upgrade your chicken while battling enemies and having fun with friends.",
     "RawUrl": "https://raw.githubusercontent.com/LynX99-9/komtolmmek2script/main/CyraaHub.lua",
     "ImageAssetId": "rbxassetid://107556080423499",
     "TagType": "HOT",
@@ -91,7 +91,7 @@
   },
   {
     "Name": "[🥳] Make a Party",
-    "Description": "Create your own party, invite others, and have fun together.",
+    "Description": "Create your own party, invite other players, and enjoy the game together.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/MakeaParty",
     "ImageAssetId": "rbxassetid://107516707934052",
     "TagType": "NONE",
@@ -100,7 +100,7 @@
   },
   {
     "Name": "⚡ Power a City",
-    "Description": "Build and manage your city by generating power and expanding your empire.",
+    "Description": "Build and manage your city by generating power, upgrading your infrastructure, and expanding your empire.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/PoweraCity",
     "ImageAssetId": "rbxassetid://108446142906731",
     "TagType": "NONE",
@@ -109,7 +109,7 @@
   },
   {
     "Name": "Build an AI [💻 HACK]",
-    "Description": "Build and customize your own AI while unlocking new features and upgrades.",
+    "Description": "Build and customize your own AI while unlocking new features, upgrades, and improvements.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/BuildanAI",
     "ImageAssetId": "rbxassetid://119924073988972",
     "TagType": "NONE",
@@ -118,7 +118,7 @@
   },
   {
     "Name": "+1 Wall Hop Obby Escape",
-    "Description": "Jump, climb, and overcome challenging obstacles as you make your way to the escape.",
+    "Description": "Jump, climb, and overcome challenging obstacles as you make your way through the escape.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/Wall%20Hop%20Obby%20Escape",
     "ImageAssetId": "rbxassetid://89119135342886",
     "TagType": "NONE",
@@ -136,7 +136,7 @@
   },
   {
     "Name": "+1 High Jump Power",
-    "Description": "Boost your jump power and soar higher than ever.",
+    "Description": "Increase your jump power and reach new heights with enhanced jumping abilities.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/HighJumpPower",
     "ImageAssetId": "rbxassetid://121505296815495",
     "TagType": "NONE",
@@ -145,7 +145,7 @@
   },
   {
     "Name": "+1 Web Swing Escape",
-    "Description": "Swing through the air and escape with powerful web moves.",
+    "Description": "Swing through the air, navigate obstacles, and make your escape with powerful web-swinging abilities.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/WebSwingEscape",
     "ImageAssetId": "rbxassetid://129142535236862",
     "TagType": "NONE",
@@ -154,7 +154,7 @@
   },
   {
     "Name": "[NEW] My Toll Farm!",
-    "Description": "Build your toll farm and start collecting rewards.",
+    "Description": "Build your toll farm, collect rewards, and expand your earnings with convenient automation.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/MyTollFarm",
     "ImageAssetId": "rbxassetid://82564760235836",
     "TagType": "NONE",
@@ -163,7 +163,7 @@
   },
   {
     "Name": "🪂 Fall For Brainrots!",
-    "Description": "Gravity does the work, this script does the rest. Easiest brainrot you'll ever farm without lifting a finger.",
+    "Description": "Use gravity to your advantage and automate your farming while you sit back and relax.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/FallForBrainrots",
     "ImageAssetId": "rbxassetid://83344840395172",
     "TagType": "NONE",
@@ -172,7 +172,7 @@
   },
   {
     "Name": "⚽ Jump To Steal Soccer Players ⚽",
-    "Description": "Kidnap—I mean, tactically acquire—soccer players with zero effort. Easy pickups, absolutely zero cardio required.",
+    "Description": "Jump around the map, collect soccer players, and automate your progression with convenient features.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/JumpToStealSoccerPlayers",
     "ImageAssetId": "rbxassetid://139973393465382",
     "TagType": "NONE",
@@ -181,7 +181,7 @@
   },
   {
     "Name": "[X2] +1 Cut Grass Adventure",
-    "Description": "Finally, you can tell your mom you touched grass today. Automates the cutting so you can get ripped while being entirely unproductive.",
+    "Description": "Automate grass cutting and progress through your adventure with convenient farming features.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/CutGrassAdventure",
     "ImageAssetId": "rbxassetid://115885312977657",
     "TagType": "UPDATED",
@@ -190,7 +190,7 @@
   },
   {
     "Name": "[NOW] +1 Jump Crunchy ASMR Escape!",
-    "Description": "Automates those satisfying crunchy jumps so you can escape without your real-life legs cramping up. Absolute ASMR bliss.",
+    "Description": "Automate crunchy jumps and progress through the escape with satisfying movement and farming features.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/JumpCrunchyASMREscape",
     "ImageAssetId": "rbxassetid://70770599354986",
     "TagType": "NONE",
@@ -199,7 +199,7 @@
   },
   {
     "Name": "Steal An Egg",
-    "Description": "No Key Script (made by night hub) my script is on development so use this as temporary.",
+    "Description": "A temporary no-key script while the main script is still in development.",
     "RawUrl": "https://pastefy.app/J29hE5fR/raw",
     "ImageAssetId": "rbxassetid://99167825730320",
     "TagType": "NONE",
@@ -208,7 +208,7 @@
   },
   {
     "Name": "Magic Loot[🦕Dino Event]",
-    "Description": "Thanos-snap those drops straight into your inventory. Auto-collects everything so you can be the apex predator of the Dino event.",
+    "Description": "Automatically collect valuable drops during the Dino Event and make event farming more convenient.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/MagicLootDinoEvent",
     "ImageAssetId": "rbxassetid://100090397593569",
     "TagType": "NONE",
@@ -217,7 +217,7 @@
   },
   {
     "Name": "+1 Height Per Jump",
-    "Description": "Infinite jump is absolutely unhinged. Ascend to the heavens and leave the peasants on the ground behind.",
+    "Description": "Increase your height with every jump and reach new areas as you climb higher.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/HeightPerJump",
     "ImageAssetId": "rbxassetid://128914503653072",
     "TagType": "NONE",
@@ -226,7 +226,7 @@
   },
   {
     "Name": "[CRAFT🔨] Anime Card Farm",
-    "Description": "Objectively the best script to hoard anime cards. Build your 2D empire without breaking a sweat (or a mouse button).",
+    "Description": "Automate anime card farming and build your collection with convenient progression features.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/AnimeCardFarm",
     "ImageAssetId": "rbxassetid://112827759842870",
     "TagType": "NONE",
@@ -235,7 +235,7 @@
   },
   {
     "Name": "[🍯] Unbox ASMR!",
-    "Description": "Auto-buys and unboxes crates so fast it might just trigger an ASMR response in your wallet. Sit back and enjoy the loot.",
+    "Description": "Automate crate purchases and unbox rewards efficiently while progressing through the game.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/UnboxASMR",
     "ImageAssetId": "rbxassetid://111049459251843",
     "TagType": "NONE",
@@ -244,7 +244,7 @@
   },
   {
     "Name": "[🍌] +1 Banana Monkey Destruction",
-    "Description": "Return to monke. Infinite grab activated—go absolutely bananas and destroy everything in your path. Ooo ooo ah ah!",
+    "Description": "Grab, collect, and progress through the game with convenient automation features.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/BananaMonkeyDestruction",
     "ImageAssetId": "rbxassetid://109800845162836",
     "TagType": "NONE",
@@ -253,7 +253,7 @@
   },
   {
     "Name": "[X5] +1 Backflip Keyboard Escape",
-    "Description": "Simple but deadly. Automates your flips so you can flex on everyone while desperately trying to escape your keyboard.",
+    "Description": "Automate backflips and movement while progressing through the keyboard escape.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/BackflipKeyboardEscape",
     "ImageAssetId": "rbxassetid://78362287868730",
     "TagType": "NONE",
@@ -262,7 +262,7 @@
   },
   {
     "Name": "Lucky Dumplings",
-    "Description": "Still in beta, but cooked up fresh by Discord demand. Automates your dumpling luck so you never go hungry.",
+    "Description": "Automate dumpling farming and improve your chances of collecting useful rewards. Currently in beta.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/LuckyDumplings",
     "ImageAssetId": "rbxassetid://129074514749498",
     "TagType": "NONE",
@@ -271,7 +271,7 @@
   },
   {
     "Name": "+1 Katana Evolution",
-    "Description": "Powered by Rayfield Gen 2. It’s simple, it’s overpowered, and it’ll turn you into an anime swordsman while you literally do nothing.",
+    "Description": "Progress through Katana Evolution with powerful automation features and streamlined gameplay.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/KatanaEvolution",
     "ImageAssetId": "rbxassetid://139541792044096",
     "TagType": "NONE",
@@ -280,7 +280,7 @@
   },
   {
     "Name": "Break Tape For Brainrots",
-    "Description": "Rip through tape and hoard brainrot at terminal velocity. Why play the game when the script can play it better?",
+    "Description": "Automate tape breaking and farming to progress through the game with less manual effort.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/BreakTapeForBrainrots",
     "ImageAssetId": "rbxassetid://81783802613435",
     "TagType": "NONE",
@@ -289,7 +289,7 @@
   },
   {
     "Name": "[⭐] +1 Followers Per Click",
-    "Description": "Become a famous influencer with zero actual talent. Super overpowered autofarm—keep it a secret so your fans don't know you're botting!",
+    "Description": "Automate clicking and follower progression while building your in-game following.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/FollowersPerClick",
     "ImageAssetId": "rbxassetid://99514140288698",
     "TagType": "NONE",
@@ -298,7 +298,7 @@
   },
   {
     "Name": "Dino Hunters [UPD]",
-    "Description": "Now with Auto-Evolve, Auto-Hatch, and Auto-Craft! Basically, the script plays God with dinosaurs so you don't have to.",
+    "Description": "Automate evolving, hatching, and crafting while progressing through Dino Hunters.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/DinoHuntersUPD",
     "ImageAssetId": "rbxassetid://101328890837966",
     "TagType": "NONE",
@@ -307,7 +307,7 @@
   },
   {
     "Name": "[🧬] Throw a Coin",
-    "Description": "Tosses coins, equips the best ones, sells the junk, and buys upgrades. It's basically a financial advisor that throws money at things.",
+    "Description": "Automate coin throwing, equip your best coins, sell unwanted items, and purchase upgrades.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/ThrowaCoin",
     "ImageAssetId": "rbxassetid://80474715145780",
     "TagType": "NONE",
@@ -316,7 +316,7 @@
   },
   {
     "Name": "[🏆] Build an ASMR Tower",
-    "Description": "Automates literally everything: building, farming, fusing, and redeeming codes. Build a massive tower of ASMR glory while taking a nap.",
+    "Description": "Automate building, farming, fusing, and code redemption while expanding your ASMR tower.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/BuildanASMRTower",
     "ImageAssetId": "rbxassetid://105645768552627",
     "TagType": "NONE",
@@ -325,7 +325,7 @@
   },
   {
     "Name": "+1 Bottle Flip Obby Escape",
-    "Description": "Flipping bottles indefinitely because physics is just a suggestion. Overpowered enough to make Dude Perfect jealous.",
+    "Description": "Automate bottle flips and progress through the obby escape with less manual effort.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/BottleFlipObbyEscape",
     "ImageAssetId": "rbxassetid://138472026799705",
     "TagType": "NONE",
@@ -334,7 +334,7 @@
   },
   {
     "Name": "+1 Pickaxe Swing Escape",
-    "Description": "Swings that pickaxe so aggressively you'll mine your way straight to the top of the leaderboards. Try not to break your screen.",
+    "Description": "Automate pickaxe swings and progress through the escape while mining your way forward.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/PickaxeSwingEscape",
     "ImageAssetId": "rbxassetid://73842518331517",
     "TagType": "NONE",
@@ -343,7 +343,7 @@
   },
   {
     "Name": "Find and Mark!",
-    "Description": "Auto-play is so overpowered it feels illegal. Finds and marks everything while you stare blankly at your monitor.",
+    "Description": "Automatically find and mark targets while progressing through the game with minimal manual input.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/FindandMark",
     "ImageAssetId": "rbxassetid://70521315953311",
     "TagType": "NONE",
@@ -352,7 +352,7 @@
   },
   {
     "Name": "My Giant Sandwich",
-    "Description": "Takes 20 seconds to load, but patience is a virtue when you're automating the creation of a sandwich this massively overpowered.",
+    "Description": "Automate sandwich creation and progression with convenient features. Loading may take a little longer.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/MyGiantSandwich",
     "ImageAssetId": "rbxassetid://118225999381998",
     "TagType": "NONE",
@@ -361,7 +361,7 @@
   },
   {
     "Name": "Build a base RNG 🎲",
-    "Description": "Executes with a slight delay (it's thinking, okay?), but works perfectly to automate the RNG chaos of base building.",
+    "Description": "Automate base-building progression and enjoy the game's RNG mechanics with less manual effort.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/buildabaseRNG",
     "ImageAssetId": "rbxassetid://128276768200520",
     "TagType": "NONE",
@@ -370,7 +370,7 @@
   },
   {
     "Name": "[W3]+1 Speed Moonwalk Escape🌙",
-    "Description": "Michael Jackson levels of automation. A full autofarm so OP you'll be moonwalking out of the escape before anyone notices.",
+    "Description": "Automate movement and speed progression while making your way through the moonwalk escape.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/SpeedMoonwalkEscape",
     "ImageAssetId": "rbxassetid://81812983343513",
     "TagType": "NONE",
@@ -379,7 +379,7 @@
   },
   {
     "Name": "Speedsters Infinite⚡",
-    "Description": "Is it OP? Yes. Will you break the sound barrier while doing absolutely nothing? Also yes.",
+    "Description": "Increase your speed and automate progression while moving through the game with ease.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/SpeedstersInfinite",
     "ImageAssetId": "rbxassetid://83476895882409",
     "TagType": "NONE",
@@ -388,7 +388,7 @@
   },
   {
     "Name": "+1 Hack Per Click",
-    "Description": "The ultimate script kiddie fantasy. Automates breaking, rebirths, eggs, and spins so you can 'hack' your way to victory without clicking once.",
+    "Description": "Automate breaking, rebirths, eggs, and spins to streamline your progression.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/HackPerClick",
     "ImageAssetId": "rbxassetid://114139529313872",
     "TagType": "NONE",
@@ -397,7 +397,7 @@
   },
   {
     "Name": "+1 Speed Slime Keyboard Escape",
-    "Description": "Simple under the hood, but absolutely goated. Slime your way out of that keyboard with ridiculously overpowered speed.",
+    "Description": "Automate movement and increase your speed while progressing through the keyboard escape.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/SpeedSlimeKeyboardEscape",
     "ImageAssetId": "rbxassetid://104463734310957",
     "TagType": "NONE",
@@ -406,7 +406,7 @@
   },
   {
     "Name": "Throw Hammers for Brainrots!",
-    "Description": "The YouTube commenters demanded it, so here it is. Automate throwing hammers and farm that sweet, sweet brainrot like a pro.",
+    "Description": "Automate hammer throwing and farming while progressing through the game with less manual effort.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/ThrowHammersforBrainrot",
     "ImageAssetId": "rbxassetid://115011163526994",
     "TagType": "NONE",
@@ -415,7 +415,7 @@
   },
   {
     "Name": "Fill the Bucket",
-    "Description": "Infinite stamina activated. Fill that bucket endlessly with OP features while your in-game character rethinks their existence.",
+    "Description": "Automate bucket filling and stamina-based progression with convenient farming features.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/FilltheBucket",
     "ImageAssetId": "rbxassetid://84394647849599",
     "TagType": "NONE",
@@ -424,7 +424,7 @@
   },
   {
     "Name": "🌲 Axe RNG",
-    "Description": "Literally farms EVERYTHING. Sit back and watch the game play itself while you pray to the RNG gods for a good axe.",
+    "Description": "Automate tree farming and progression while testing your luck for better axes.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/main/AxeRNG",
     "ImageAssetId": "rbxassetid://85206671976803",
     "TagType": "NONE",
@@ -433,7 +433,7 @@
   },
   {
     "Name": "Grow a Garden 2",
-    "Description": "Abandoned by the dev but too stubborn to die. It still works perfectly to automate your digital green thumb.",
+    "Description": "Automate gardening and progression with convenient farming features. The game is no longer actively maintained.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/GrowAGardenTwo",
     "ImageAssetId": "rbxassetid://132244635622758",
     "TagType": "NONE",
@@ -442,7 +442,7 @@
   },
   {
     "Name": "[X5] +1 Speed Keyboard Escape | Emojis",
-    "Description": "A painfully simple autofarm that is hilariously overpowered. Escape the keyboard faster than you can type an emoji.",
+    "Description": "Automate speed progression and movement while making your way through the keyboard escape.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/SpeedKeyboardEscapeEmojis",
     "ImageAssetId": "rbxassetid://97222391222389",
     "TagType": "NONE",
@@ -451,7 +451,7 @@
   },
   {
     "Name": "Build A Soccer Squad! [PRIME]",
-    "Description": "Rolls for soccer players faster than you can say 'GOALLLLLL'. Build a prime squad in record time.",
+    "Description": "Automate soccer player rolls and build your squad while progressing toward stronger players.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/Script/refs/heads/main/BuildASoccerSquadPRIME",
     "ImageAssetId": "rbxassetid://94846625856501",
     "TagType": "NONE",
@@ -460,7 +460,7 @@
   },
   {
     "Name": "Tree RNG",
-    "Description": "Full automation AND it acts like a free gamepass? Say less. Watch those trees chop themselves while you sip your juice box.",
+    "Description": "Automate tree chopping and progression while working toward better rewards and upgrades.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/TreeRNG",
     "ImageAssetId": "rbxassetid://121827855136249",
     "TagType": "NONE",
@@ -469,7 +469,7 @@
   },
   {
     "Name": "Crab Tycoon 🦀",
-    "Description": "Auto-farms so well you can go AFK for the rest of your life. Let the crabs build the tycoon while you go touch real grass.",
+    "Description": "Automate farming and tycoon progression while expanding your crab-powered operation.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/CrabTycoon",
     "ImageAssetId": "rbxassetid://140695431502264",
     "TagType": "NONE",
@@ -478,7 +478,7 @@
   },
   {
     "Name": "+1 Health For Brainrot!",
-    "Description": "Overpowered enough to force your way onto the leaderboards. Gain infinite health while your actual brain rots watching the numbers go up.",
+    "Description": "Increase your health and automate progression while working toward stronger stats.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/HealthForBrainrot",
     "ImageAssetId": "rbxassetid://74236780693637",
     "TagType": "NONE",
@@ -487,7 +487,7 @@
   },
   {
     "Name": "Chicken Farm 🐣",
-    "Description": "Autofarms and pops lucky blocks automatically. Basically turns your PC into a highly efficient, virtual poultry factory.",
+    "Description": "Automate farming and lucky block collection while building your virtual chicken operation.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/ChickenFarm",
     "ImageAssetId": "rbxassetid://100059908177743",
     "TagType": "NONE",
@@ -496,7 +496,7 @@
   },
   {
     "Name": "Paint My Keyboard! 🎨",
-    "Description": "Automates painting, refilling, expanding, and upgrading. It's basically a sweatshop for keyboard customization, running while you sleep.",
+    "Description": "Automate painting, refilling, expanding, and upgrading to streamline your keyboard customization.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/PaintMyKeyboard",
     "ImageAssetId": "rbxassetid://113660752059484",
     "TagType": "NONE",
@@ -505,7 +505,7 @@
   },
   {
     "Name": "[🎨] Paint And SEEK!",
-    "Description": "A script so super overpowered it feels like cheating (because it is). Paint and seek with absolute zero effort.",
+    "Description": "Automate painting and seeking while progressing through the game with convenient features.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/PaintAndSEEK",
     "ImageAssetId": "rbxassetid://103324337457554",
     "TagType": "NONE",
@@ -514,7 +514,7 @@
   },
   {
     "Name": "[🏝NEW] Clicker Simulator",
-    "Description": "A totally chill script that automates literally everything. Why play a clicker game when you can just *not* click?",
+    "Description": "Automate clicking and progression so you can advance without constant manual input.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/ClickerSimulator",
     "ImageAssetId": "rbxassetid://70478021723927",
     "TagType": "NONE",
@@ -523,7 +523,7 @@
   },
   {
     "Name": "Clean The Supermarket!",
-    "Description": "Still in beta, but it's already a better janitor than you. Automates cleaning so you can avoid chores in both the real and virtual worlds.",
+    "Description": "Automate supermarket cleaning and progress through the game with convenient farming features. Currently in beta.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/CleanTheSupermarket",
     "ImageAssetId": "rbxassetid://71106815058446",
     "TagType": "NONE",
@@ -532,7 +532,7 @@
   },
   {
     "Name": "[UPD] +1 Run for NEEDOH!",
-    "Description": "Run for your life and aggressively hoard those Needohs automatically. Don't ask questions, just collect.",
+    "Description": "Automate running and Needoh collection while progressing through the game with convenient features.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/RunforNEEDOH",
     "ImageAssetId": "rbxassetid://108809198857178",
     "TagType": "NONE",
@@ -541,7 +541,7 @@
   },
   {
     "Name": "[NEW!🔥] Paint Or Seek",
-    "Description": "Comes with auto-paint, wall-checking aimbot, ESP, and wheel spins. Basically turns you into an omniscient, unstoppable painting terminator.",
+    "Description": "Includes auto-painting, wall checking, ESP, and wheel spins to streamline your Paint Or Seek gameplay.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/PaintOrSeek",
     "ImageAssetId": "rbxassetid://106255753802990",
     "TagType": "NONE",
