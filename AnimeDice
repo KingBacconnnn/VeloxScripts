@@ -3,37 +3,28 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 
--- Safe require wrapper to bypass RobloxScript security restrictions
 local rawRequire = (getrenv and getrenv().require) or require
 local function safeRequire(module)
     local oldIdentity = (getthreadidentity and getthreadidentity()) or (syn and syn.get_thread_identity and syn.get_thread_identity())
-    if setthreadidentity then
-        setthreadidentity(2)
-    elseif setidentity then
-        setidentity(2)
-    end
-
+    if setthreadidentity then setthreadidentity(2) elseif setidentity then setidentity(2) end
     local success, result = pcall(rawRequire, module)
-
     if oldIdentity then
-        if setthreadidentity then
-            setthreadidentity(oldIdentity)
-        elseif setidentity then
-            setidentity(oldIdentity)
-        end
+        if setthreadidentity then setthreadidentity(oldIdentity) elseif setidentity then setidentity(oldIdentity) end
     end
-
     if not success then
-        error(result)
+        return nil
     end
     return result
 end
 
-local DataController = safeRequire(ReplicatedStorage:WaitForChild("Framework"):WaitForChild("Features"):WaitForChild("Data"):WaitForChild("DataController"))
-local Network = safeRequire(ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Network"))
-
 local function newComm(serviceName)
+    local Network = safeRequire(ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Network"))
+    if not Network then return nil end
     return Network.ClientComm.new(ReplicatedStorage:WaitForChild("Network"), false, serviceName)
+end
+
+local function wrapFeature(name, callback)
+    pcall(callback)
 end
 
 local Window = WindUI:CreateWindow({ Title = "[🎉UPD 2] Anime Dice", Icon = "zap", Author = "by Ovei", Folder = "AutoHub" })
@@ -49,37 +40,35 @@ local TowerAutoTab = Window:Tab({ Title = "Tower (Auto)", Icon = "play" })
 local SellingTab = Window:Tab({ Title = "Selling", Icon = "tag" })
 local DailyTab = Window:Tab({ Title = "Daily Reward", Icon = "gift" })
 
--- Auto Collect Money
-do
+wrapFeature("DataController", function()
+    local DataController = safeRequire(ReplicatedStorage:WaitForChild("Framework"):WaitForChild("Features"):WaitForChild("Data"):WaitForChild("DataController"))
+    _G.DataController = DataController
+end)
+
+wrapFeature("Plot Collect", function()
     local plotService = newComm("PlotService")
+    if not plotService then return end
     local collectSignal = plotService:GetSignal("CollectBalance")
     local PlotConfig = safeRequire(ReplicatedStorage:WaitForChild("Framework"):WaitForChild("Features"):WaitForChild("Plot"):WaitForChild("PlotConfig"))
+    if not PlotConfig then return end
     local maxSlots = PlotConfig.GetMaxSlots()
-
     local autoActive = false
     local collectLoop = nil
 
     local function getSlotState(slotIndex)
-        local state = DataController.Slots[tostring(slotIndex)]
-        if state then
-            return state()
-        end
+        local state = _G.DataController.Slots[tostring(slotIndex)]
+        if state then return state() end
         return nil
     end
 
     local function collectAll()
-        local collectedAny = false
         for slot = 1, maxSlots do
             local data = getSlotState(slot)
             if data and data.balance and data.balance > 0 then
-                pcall(function()
-                    collectSignal:Fire(slot)
-                end)
-                collectedAny = true
+                pcall(function() collectSignal:Fire(slot) end)
                 task.wait(0.1)
             end
         end
-        return collectedAny
     end
 
     local function startAuto()
@@ -109,18 +98,15 @@ do
     PlotTab:Button({
         Title = "Collect Once",
         Desc = "Collects all current slot balances manually.",
-        Callback = function()
-            collectAll()
-        end
+        Callback = collectAll
     })
-end
+end)
 
--- Auto Upgrade Units
-do
+wrapFeature("Plot Upgrade", function()
     local levelUpRemote = ReplicatedStorage:WaitForChild("Network"):WaitForChild("PlotService"):WaitForChild("RE"):WaitForChild("LevelUpSlot")
     local PlotConfig = safeRequire(ReplicatedStorage:WaitForChild("Framework"):WaitForChild("Features"):WaitForChild("Plot"):WaitForChild("PlotConfig"))
+    if not PlotConfig then return end
     local maxSlots = PlotConfig.GetMaxSlots()
-
     local autoActive = false
     local loopThread = nil
 
@@ -152,11 +138,12 @@ do
         Value = false,
         Callback = function(state) if state then start() else stop() end end
     })
-end
+end)
 
--- Auto Equip Best
-do
-    local equipBestSignal = newComm("PlotService"):GetSignal("EquipBest")
+wrapFeature("Plot Equip Best", function()
+    local plotService = newComm("PlotService")
+    if not plotService then return end
+    local equipBestSignal = plotService:GetSignal("EquipBest")
     local autoActive = false
     local loopThread = nil
 
@@ -181,22 +168,24 @@ do
         Value = false,
         Callback = function(state) if state then start() else stop() end end
     })
-end
+end)
 
--- Rolls & Dice: Built-in Auto Roll
-do
-    local setAutoRoll = newComm("RollService"):GetSignal("SetAutoRoll")
+wrapFeature("Rolls Built-in", function()
+    local rollService = newComm("RollService")
+    if not rollService then return end
+    local setAutoRoll = rollService:GetSignal("SetAutoRoll")
     RollsTab:Toggle({
         Title = "Enable Auto Roll",
         Desc = "Enables or disables the game's built-in Auto Roll feature.",
         Value = false,
         Callback = function(state) setAutoRoll:Fire(state) end
     })
-end
+end)
 
--- Rolls & Dice: Fast Auto Roll
-do
-    local rollDice = newComm("RollService"):GetFunction("RollDice")
+wrapFeature("Rolls Fast", function()
+    local rollService = newComm("RollService")
+    if not rollService then return end
+    local rollDice = rollService:GetFunction("RollDice")
     local autoActive = false
     local loopThread = nil
 
@@ -204,7 +193,7 @@ do
         autoActive = true
         loopThread = task.spawn(function()
             while autoActive do
-                pcall(function() rollDice() end)
+                pcall(rollDice)
                 task.wait(0.5)
             end
         end)
@@ -221,26 +210,26 @@ do
         Value = false,
         Callback = function(state) if state then start() else stop() end end
     })
-end
+end)
 
--- Rolls & Dice: Dice Manager
-do
+wrapFeature("Dice Manager", function()
     local Dice = safeRequire(ReplicatedStorage:WaitForChild("Framework"):WaitForChild("Features"):WaitForChild("Rolling"):WaitForChild("Dice"))
+    if not Dice then return end
     local shopService = newComm("DiceShopService")
+    if not shopService then return end
     local buySignal = shopService:GetSignal("BuyDice")
     local equipSignal = shopService:GetSignal("EquipDice")
     local allDice = Dice.GetAll()
-
     local buyActive = false
     local buyLoop = nil
     local equipActive = false
     local equipLoop = nil
 
     local function buyAllAffordable()
-        local money = DataController.Money()
+        local money = _G.DataController.Money()
         local bought = false
         for diceId, diceData in pairs(allDice) do
-            if diceData.price and not DataController.OwnedDice[diceId]() and money >= diceData.price then
+            if diceData.price and not _G.DataController.OwnedDice[diceId]() and money >= diceData.price then
                 pcall(function() buySignal:Fire(diceId) end)
                 bought = true
                 task.wait(0.2)
@@ -253,12 +242,12 @@ do
         local bestId = nil
         local bestLuck = -1
         for diceId, diceData in pairs(allDice) do
-            if DataController.OwnedDice[diceId]() and diceData.luck and diceData.luck > bestLuck then
+            if _G.DataController.OwnedDice[diceId]() and diceData.luck and diceData.luck > bestLuck then
                 bestLuck = diceData.luck
                 bestId = diceId
             end
         end
-        if bestId and bestId ~= DataController.Dice() then
+        if bestId and bestId ~= _G.DataController.Dice() then
             pcall(function() equipSignal:Fire(bestId) end)
             return true
         end
@@ -308,12 +297,13 @@ do
         Value = false,
         Callback = function(state) if state then startEquip() else stopEquip() end end
     })
-end
+end)
 
--- Progression: Auto Buy Upgrades
-do
+wrapFeature("Upgrades", function()
     local Upgrades = safeRequire(ReplicatedStorage:WaitForChild("Framework"):WaitForChild("Features"):WaitForChild("Upgrades"):WaitForChild("Upgrades"))
     local TreeStructure = safeRequire(ReplicatedStorage:WaitForChild("Framework"):WaitForChild("Features"):WaitForChild("Upgrades"):WaitForChild("TreeStructure"))
+    local Network = safeRequire(ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Network"))
+    if not (Upgrades and TreeStructure and Network) then return end
     local BuyUpgrade = Network.Client.GetSignal(ReplicatedStorage:WaitForChild("Network"), "BuyUpgrade")
     local upgradeNames = {}
     for name, _ in pairs(Upgrades) do if name ~= "Start" then table.insert(upgradeNames, name) end end
@@ -322,14 +312,14 @@ do
     local loopThread = nil
 
     local function isOwned(name)
-        return DataController.Upgrades[name] and DataController.Upgrades[name]()
+        return _G.DataController.Upgrades[name] and _G.DataController.Upgrades[name]()
     end
 
     local function canBuy(name)
         if isOwned(name) then return false end
         local parent = TreeStructure.GetParent(name)
         if parent and parent ~= "Start" and not isOwned(parent) then return false end
-        return DataController.Money() >= Upgrades[name].price
+        return _G.DataController.Money() >= Upgrades[name].price
     end
 
     local function buyAll()
@@ -365,19 +355,21 @@ do
         Value = false,
         Callback = function(state) if state then start() else stop() end end
     })
-end
+end)
 
--- Progression: Auto Rebirth
-do
+wrapFeature("Rebirth", function()
     local Rebirths = safeRequire(ReplicatedStorage:WaitForChild("Framework"):WaitForChild("Features"):WaitForChild("Rebirth"):WaitForChild("Rebirths"))
-    local rebirthSignal = newComm("RebirthService"):GetSignal("Rebirth")
+    if not Rebirths then return end
+    local rebirthService = newComm("RebirthService")
+    if not rebirthService then return end
+    local rebirthSignal = rebirthService:GetSignal("Rebirth")
     local autoActive = false
     local loopThread = nil
 
     local function canRebirth()
-        local current = DataController.Rebirth()
+        local current = _G.DataController.Rebirth()
         local next = Rebirths.GetNext(current)
-        return next and DataController.Money() >= next.cost
+        return next and _G.DataController.Money() >= next.cost
     end
 
     local function start()
@@ -405,13 +397,14 @@ do
         Value = false,
         Callback = function(state) if state then start() else stop() end end
     })
-end
+end)
 
--- Grades & Traits: Trait
-do
+wrapFeature("Trait", function()
     local Traits = safeRequire(ReplicatedStorage:WaitForChild("Framework"):WaitForChild("Features"):WaitForChild("Traits"):WaitForChild("Traits"))
     local EntryRegistry = safeRequire(ReplicatedStorage:WaitForChild("Framework"):WaitForChild("Features"):WaitForChild("Inventory"):WaitForChild("EntryRegistry"))
+    if not (Traits and EntryRegistry) then return end
     local traitService = newComm("TraitService")
+    if not traitService then return end
     local rollSignal = traitService:GetSignal("Roll")
 
     local unitLabelToKey = {}
@@ -424,7 +417,7 @@ do
     end
 
     local function getInventoryEntry(key)
-        local inv = DataController.Inventory()
+        local inv = _G.DataController.Inventory()
         local state = inv and inv[key]
         if not state then return nil end
         if type(state) == "function" then return state() else return state end
@@ -433,7 +426,7 @@ do
     local function refreshUnits()
         unitLabelToKey = {}
         unitLabels = {}
-        local inv = DataController.Inventory()
+        local inv = _G.DataController.Inventory()
         if not inv then return unitLabels end
         for key, _ in pairs(inv) do
             local entry = getInventoryEntry(key)
@@ -513,8 +506,6 @@ do
         Callback = function()
             if selectedUnitKey then
                 pcall(function() rollSignal:Fire(selectedUnitKey, true) end)
-            else
-                WindUI:Notify({ Title = "Auto Trait", Content = "No unit selected.", Duration = 3, Icon = "x" })
             end
         end
     })
@@ -540,7 +531,6 @@ do
                     if currentTrait == selectedTrait then
                         autoActive = false
                         traitToggle:Set(false)
-                        WindUI:Notify({ Title = "Auto Trait", Content = "Target trait reached: " .. currentTrait, Duration = 3, Icon = "check" })
                         break
                     end
                     pcall(function() rollSignal:Fire(selectedUnitKey, true) end)
@@ -561,13 +551,14 @@ do
         Value = false,
         Callback = function(state) if state then start() else stop() end end
     })
-end
+end)
 
--- Grades & Traits: Grade
-do
+wrapFeature("Grade", function()
     local Grades = safeRequire(ReplicatedStorage:WaitForChild("Framework"):WaitForChild("Features"):WaitForChild("Grades"):WaitForChild("Grades"))
     local EntryRegistry = safeRequire(ReplicatedStorage:WaitForChild("Framework"):WaitForChild("Features"):WaitForChild("Inventory"):WaitForChild("EntryRegistry"))
+    if not (Grades and EntryRegistry) then return end
     local gradeService = newComm("GradeService")
+    if not gradeService then return end
     local rollSignal = gradeService:GetSignal("Roll")
 
     local unitLabelToKey = {}
@@ -580,7 +571,7 @@ do
     end
 
     local function getInventoryEntry(key)
-        local inv = DataController.Inventory()
+        local inv = _G.DataController.Inventory()
         local state = inv and inv[key]
         if not state then return nil end
         if type(state) == "function" then return state() else return state end
@@ -589,7 +580,7 @@ do
     local function refreshUnits()
         unitLabelToKey = {}
         unitLabels = {}
-        local inv = DataController.Inventory()
+        local inv = _G.DataController.Inventory()
         if not inv then return unitLabels end
         for key, _ in pairs(inv) do
             local entry = getInventoryEntry(key)
@@ -673,8 +664,6 @@ do
         Callback = function()
             if selectedUnitKey then
                 pcall(function() rollSignal:Fire(selectedUnitKey, true) end)
-            else
-                WindUI:Notify({ Title = "Auto Grade", Content = "No unit selected.", Duration = 3, Icon = "x" })
             end
         end
     })
@@ -700,7 +689,6 @@ do
                     if currentGrade and gradeOrderMap[currentGrade] and gradeOrderMap[currentGrade] >= gradeOrderMap[selectedGrade] then
                         autoActive = false
                         gradeToggle:Set(false)
-                        WindUI:Notify({ Title = "Auto Grade", Content = "Target grade reached: " .. currentGrade, Duration = 3, Icon = "check" })
                         break
                     end
                     pcall(function() rollSignal:Fire(selectedUnitKey, true) end)
@@ -721,13 +709,14 @@ do
         Value = false,
         Callback = function(state) if state then start() else stop() end end
     })
-end
+end)
 
--- Tower (Auto)
-do
+wrapFeature("Tower", function()
     local Towers = safeRequire(ReplicatedStorage:WaitForChild("Framework"):WaitForChild("Features"):WaitForChild("Towers"):WaitForChild("Towers"))
     local TowerController = safeRequire(ReplicatedStorage:WaitForChild("Framework"):WaitForChild("Features"):WaitForChild("Towers"):WaitForChild("TowerController"))
+    if not (Towers and TowerController) then return end
     local towerService = newComm("Towers")
+    if not towerService then return end
     local equipBest = towerService:GetSignal("EquipBestTowerTeam")
     local cancelTower = towerService:GetFunction("CancelTower")
 
@@ -779,12 +768,12 @@ do
         Value = false,
         Callback = function(state) if state then start() else stop() end end
     })
-end
+end)
 
--- Selling
-do
+wrapFeature("Selling", function()
     local NumberFormatter = safeRequire(ReplicatedStorage:WaitForChild("Packages"):WaitForChild("NumberFormatter"))
     local sellService = newComm("SellService")
+    if not (NumberFormatter and sellService) then return end
     local sellInventory = sellService:GetFunction("SellInventory")
     local updateAutoSell = sellService:GetSignal("UpdateAutoSell")
 
@@ -793,7 +782,7 @@ do
 
     local function sellAllNow()
         local keys = {}
-        for key in pairs(DataController.Inventory()) do
+        for key in pairs(_G.DataController.Inventory()) do
             table.insert(keys, key)
         end
         if #keys > 0 then
@@ -860,7 +849,7 @@ do
     })
 
     task.spawn(function()
-        local current = DataController.AutoSell and DataController.AutoSell() or 0
+        local current = _G.DataController.AutoSell and _G.DataController.AutoSell() or 0
         if current > 0 then
             currentThreshold = current
             thresholdInput:Set(tostring(current))
@@ -868,19 +857,20 @@ do
             autoSellEnabled = true
         end
     end)
-end
+end)
 
--- Daily Reward
-do
+wrapFeature("Daily", function()
     local DailyRewardConfig = safeRequire(ReplicatedStorage:WaitForChild("Framework"):WaitForChild("Features"):WaitForChild("Rewards"):WaitForChild("DailyRewardConfig"))
+    if not DailyRewardConfig then return end
     local dailyService = newComm("DailyRewardService")
+    if not dailyService then return end
     local claimSignal = dailyService:GetSignal("Claim")
 
     local autoActive = false
     local loopThread = nil
 
     local function isReady()
-        local last = DataController.LastDailyRewardClaim()
+        local last = _G.DataController.LastDailyRewardClaim()
         if last == 0 then return true end
         return (os.time() - last) >= DailyRewardConfig.Cooldown
     end
@@ -909,4 +899,4 @@ do
         Value = false,
         Callback = function(state) if state then start() else stop() end end
     })
-end
+end)
