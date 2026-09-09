@@ -9,6 +9,24 @@
     "PlaceId": 0
   },
   {
+    "Name": "Tap 4 Money 💸",
+    "Description": "A Roblox game focused on tapping to earn in-game money.",
+    "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/Script/refs/heads/main/Tap4Money",
+    "ImageAssetId": "rbxassetid://86754140730233",
+    "TagType": "HOT",
+    "LastUpdated": 1788923400,
+    "PlaceId": 125410772032969
+  },
+  {
+    "Name": "+1 Tongue Escape",
+    "Description": "A Roblox escape game featuring a tongue-themed challenge.",
+    "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/Script/refs/heads/main/TongueEscape",
+    "ImageAssetId": "rbxassetid://95912007405012",
+    "TagType": "HOT",
+    "LastUpdated": 1788923400,
+    "PlaceId": 122245938604556
+  },
+  {
     "Name": "[UPD 2] Sword Hunter",
     "Description": "Hunt powerful swords, progress through the game, and automate your adventure with useful features.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/SwordHunter",
