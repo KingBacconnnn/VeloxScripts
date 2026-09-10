@@ -1,3 +1,8 @@
+if getgenv().AutoHubExecuted then
+    return
+end
+getgenv().AutoHubExecuted = true
+
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
 local Players = game:GetService("Players")
@@ -653,51 +658,65 @@ local function farmBuildPriority()
 end
 
 local function farmLoop()
-    while farmAuto do
-        if not farmAlive() then
-            task.wait(0.3)
-        else
-            local priority = farmBuildPriority()
-            if #priority == 0 then
-                farmNotifyOnce("Egg Farm", "No target rarities selected.", "x")
-                task.wait(1)
+    local ok, err = pcall(function()
+        while farmAuto do
+            if not farmAlive() then
+                task.wait(0.3)
             else
-                local eggs = farmAllEggs()
-                local chosenRarity, chosenEgg = nil, nil
+                local priority = farmBuildPriority()
+                if #priority == 0 then
+                    farmNotifyOnce("Egg Farm", "No target rarities selected.", "x")
+                    task.wait(1)
+                else
+                    local eggs = farmAllEggs()
+                    local chosenRarity, chosenEgg = nil, nil
 
-                for _, rarity in ipairs(priority) do
-                    local candidates = {}
-                    for _, egg in ipairs(eggs) do
-                        if egg and egg.Parent then
-                            if not farmIsMine(egg) and not farmIsPlaced(egg) and not farmIsRecent(egg) then
-                                if farmRarity(egg) == rarity then table.insert(candidates, egg) end
+                    for _, rarity in ipairs(priority) do
+                        local candidates = {}
+                        for _, egg in ipairs(eggs) do
+                            if egg and egg.Parent then
+                                if not farmIsMine(egg) and not farmIsPlaced(egg) and not farmIsRecent(egg) then
+                                    if farmRarity(egg) == rarity then table.insert(candidates, egg) end
+                                end
                             end
                         end
+                        if #candidates > 0 then
+                            chosenRarity = rarity
+                            chosenEgg = candidates[1]
+                            break
+                        end
                     end
-                    if #candidates > 0 then
-                        chosenRarity = rarity
-                        chosenEgg = candidates[1]
-                        break
-                    end
-                end
 
-                if chosenEgg then
-                    farmEmpty = 0
-                    farmProcess(chosenEgg, chosenRarity)
-                    farmProcessed = farmProcessed + 1
-                    if farmProcessed % farmConfig.IDLE_RESET_EVERY == 0 then farmIdleReset() end
-                    task.wait(0.1)
-                else
-                    farmEmpty = farmEmpty + 1
-                    local backoff = math.min(5, math.max(0.5, 1.5 ^ math.min(farmEmpty, 3)))
-                    farmNotifyOnce("Egg Farm", "Waiting for priority egg...")
-                    task.wait(backoff)
+                    if chosenEgg then
+                        farmEmpty = 0
+                        farmProcess(chosenEgg, chosenRarity)
+                        farmProcessed = farmProcessed + 1
+                        if farmProcessed % farmConfig.IDLE_RESET_EVERY == 0 then farmIdleReset() end
+                        task.wait(0.1)
+                    else
+                        farmEmpty = farmEmpty + 1
+                        local backoff = math.min(5, math.max(0.5, 1.5 ^ math.min(farmEmpty, 3)))
+                        farmNotifyOnce("Egg Farm", "Waiting for priority egg...")
+                        task.wait(backoff)
+                    end
                 end
             end
+            task.wait(0.05)
         end
-        task.wait(0.05)
-    end
+    end)
+
     farmThread = nil
+
+    if not ok then
+        farmAuto = false
+        farmStopAnchor()
+        farmStopNoclip()
+        notify("Egg Farm", "Stopped due to an error.", "x")
+        if farmToggle and farmToggle.SetValue then
+            pcall(function() farmToggle:SetValue(false) end)
+        end
+        updateEggLocks()
+    end
 end
 
 local treadAuto = false
@@ -906,6 +925,11 @@ ChangelogTab:Paragraph({
     Desc = "Fixed Auto Place Egg. Improved feature locking and startup behavior."
 })
 
+ChangelogTab:Paragraph({
+    Title = "v1.0.4",
+    Desc = "Fixed Egg Farm silently stopping when loaded via a URL. Added safer error handling and thread cleanup."
+})
+
 local FishingTab = Window:Tab({ Title = "Fishing", Icon = "fish" })
 
 FishingTab:Section({ Title = "Equip Best" })
@@ -1011,7 +1035,7 @@ local function safeUnlock(el)
     if el then pcall(function() el:Unlock() end) end
 end
 
-local function updateEggLocks()
+updateEggLocks = function()
     if hatchAuto or placeAuto then
         safeLock(farmToggle)
     else
@@ -1117,7 +1141,7 @@ farmToggle = EggsTab:Toggle({
     Callback = function(state)
         farmAuto = state
         if state then
-            if farmThread then
+            if farmThread and coroutine.status(farmThread) ~= "dead" then
                 updateEggLocks()
                 return
             end
