@@ -379,6 +379,8 @@ local farmRecent = {}
 local farmAnchor = nil
 local farmSafePos = nil
 
+local updateEggLocks
+
 local function farmRnd(min, max) return min + math.random() * (max - min) end
 
 local function farmNotifyOnce(title, content, icon)
@@ -715,7 +717,7 @@ local function farmLoop()
         if farmToggle and farmToggle.SetValue then
             pcall(function() farmToggle:SetValue(false) end)
         end
-        updateEggLocks()
+        if updateEggLocks then updateEggLocks() end
     end
 end
 
@@ -927,7 +929,12 @@ ChangelogTab:Paragraph({
 
 ChangelogTab:Paragraph({
     Title = "v1.0.4",
-    Desc = "Fixed Egg Farm silently stopping when loaded via a URL. Added safer error handling and thread cleanup."
+    Desc = "Fixed Egg Farm silently stopping when loaded via a URL."
+})
+
+ChangelogTab:Paragraph({
+    Title = "v1.0.5",
+    Desc = "Fixed lock state being removed immediately after being applied. Target Rarities dropdown is now also locked while Auto Farm Eggs is active."
 })
 
 local FishingTab = Window:Tab({ Title = "Fishing", Icon = "fish" })
@@ -1024,43 +1031,53 @@ end)
 
 local EggsTab = Window:Tab({ Title = "Eggs", Icon = "egg" })
 
-local placeToggle, hatchToggle, farmToggle
+local placeToggle, hatchToggle, farmToggle, rarityDropdown
 local hatchOnceBtn, placeOnceBtn
 
-local function safeLock(el)
-    if el then pcall(function() el:Lock() end) end
-end
+local lockState = {
+    farm = false,
+    hatch = false,
+    place = false,
+    dropdown = false,
+    hatchOnce = false,
+    placeOnce = false,
+}
 
-local function safeUnlock(el)
-    if el then pcall(function() el:Unlock() end) end
+local updatingLocks = false
+
+local function setLocked(key, toggle, shouldLock)
+    if not toggle then return end
+    if lockState[key] == shouldLock then return end
+    lockState[key] = shouldLock
+    if shouldLock then
+        pcall(function() toggle:Lock() end)
+    else
+        pcall(function() toggle:Unlock() end)
+    end
 end
 
 updateEggLocks = function()
-    if hatchAuto or placeAuto then
-        safeLock(farmToggle)
-    else
-        safeUnlock(farmToggle)
-    end
-    if farmAuto then
-        safeLock(hatchToggle)
-        safeLock(placeToggle)
-        safeLock(hatchOnceBtn)
-        safeLock(placeOnceBtn)
-    else
-        safeUnlock(hatchToggle)
-        safeUnlock(placeToggle)
-        safeUnlock(hatchOnceBtn)
-        safeUnlock(placeOnceBtn)
-    end
+    if updatingLocks then return end
+    updatingLocks = true
+
+    setLocked("farm", farmToggle, hatchAuto or placeAuto)
+    setLocked("hatch", hatchToggle, farmAuto)
+    setLocked("place", placeToggle, farmAuto)
+    setLocked("dropdown", rarityDropdown, farmAuto)
+    setLocked("hatchOnce", hatchOnceBtn, farmAuto)
+    setLocked("placeOnce", placeOnceBtn, farmAuto)
+
+    updatingLocks = false
 end
 
 EggsTab:Section({ Title = "Auto Hatch" })
 
 hatchToggle = EggsTab:Toggle({
     Title = "Auto Hatch Egg",
-    Desc = "Automatically hatches all eggs that are ready.",
+    Desc = "Automatically hatches all eggs that are ready. Locks Auto Farm Eggs while this is active.",
     Value = false,
     Callback = function(state)
+        if updatingLocks then return end
         if state then
             local hrp = getHRP()
             if hrp then hatchSavedCFrame = hrp.CFrame end
@@ -1076,7 +1093,7 @@ hatchToggle = EggsTab:Toggle({
 
 hatchOnceBtn = EggsTab:Button({
     Title = "Hatch Once",
-    Desc = "Hatches all currently ready eggs once.",
+    Desc = "Hatches all currently ready eggs once. Unavailable while Auto Farm Eggs is active.",
     Callback = function()
         local eggs = getMyPlacedEggs()
         for _, egg in ipairs(eggs) do
@@ -1089,9 +1106,10 @@ EggsTab:Section({ Title = "Auto Place" })
 
 placeToggle = EggsTab:Toggle({
     Title = "Auto Place Egg",
-    Desc = "Automatically places eggs on your plot and returns to your previous position.",
+    Desc = "Automatically places eggs on your plot and returns to your previous position. Locks Auto Farm Eggs while this is active.",
     Value = false,
     Callback = function(state)
+        if updatingLocks then return end
         if state then
             local hrp = getHRP()
             if hrp then placeSavedCFrame = hrp.CFrame end
@@ -1107,7 +1125,7 @@ placeToggle = EggsTab:Toggle({
 
 placeOnceBtn = EggsTab:Button({
     Title = "Place Once",
-    Desc = "Places one egg on your plot and returns to your previous position.",
+    Desc = "Places one egg on your plot and returns to your previous position. Unavailable while Auto Farm Eggs is active.",
     Callback = function()
         local hrp = getHRP()
         if hrp then placeSavedCFrame = hrp.CFrame end
@@ -1121,9 +1139,9 @@ placeOnceBtn = EggsTab:Button({
 
 EggsTab:Section({ Title = "Egg Farm" })
 
-EggsTab:Dropdown({
+rarityDropdown = EggsTab:Dropdown({
     Title = "Target Rarities",
-    Desc = "Choose which egg rarities to farm. Higher rarities are prioritized first.",
+    Desc = "Choose which egg rarities to farm. Higher rarities are prioritized first. Locked while Auto Farm Eggs is active.",
     Values = rarityOrder,
     Value = { "Basic" },
     Multi = true,
@@ -1136,9 +1154,10 @@ EggsTab:Dropdown({
 
 farmToggle = EggsTab:Toggle({
     Title = "Auto Farm Eggs",
-    Desc = "Automatically farms eggs based on your selected rarity priority.",
+    Desc = "Automatically farms eggs based on your selected rarity priority. Unavailable while Auto Hatch Egg or Auto Place Egg is active.",
     Value = false,
     Callback = function(state)
+        if updatingLocks then return end
         farmAuto = state
         if state then
             if farmThread and coroutine.status(farmThread) ~= "dead" then
