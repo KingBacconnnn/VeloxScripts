@@ -9,11 +9,38 @@
     "PlaceId": 0
   },
   {
+  "Name": "Steal an Egg for Squishy Dumplings!",
+  "Description": "A Roblox script for Steal an Egg for Squishy Dumplings, featuring gameplay automation and useful in-game features.",
+  "RawUrl": "",
+  "ImageAssetId": "rbxassetid://104341666679181",
+  "TagType": "HOT",
+  "LastUpdated": 1789305682,
+  "PlaceId": 134679507313109
+  },
+  {
+  "Name": "Grow Beanstalk to Steal An Egg",
+  "Description": "A Roblox script for Grow Beanstalk to Steal An Egg, providing helpful features and automation for the game.",
+  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/GrowBeanstalktoStealAnEgg",
+  "ImageAssetId": "rbxassetid://97939390177713",
+  "TagType": "HOT",
+  "LastUpdated": 1789305682,
+  "PlaceId": 87695656520229
+  },
+  {
+  "Name": "Steal a Giant Egg",
+  "Description": "A Roblox script for Steal a Giant Egg, featuring useful gameplay features and automation.",
+  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/StealaGiantEgg",
+  "ImageAssetId": "rbxassetid://73160996227994",
+  "TagType": "HOT",
+  "LastUpdated": 1789305682,
+  "PlaceId": 136448020793455
+  },
+  {
     "Name": "+1 Mog Evolution",
     "Description": "Dominate Mog Evolution with this powerful script! Automate key gameplay tasks, evolve faster, and progress through the game with ease.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/MogEvolution",
     "ImageAssetId": "rbxassetid://125629794962998",
-    "TagType": "HOT",
+    "TagType": "NONE",
     "LastUpdated": 1789133163,
     "PlaceId": 92648272637932
   },
@@ -22,7 +49,7 @@
     "Description": "UNDETECTED Fast and easy Fish Eggs script with a clean, lightweight experience. Regularly updated and designed for smooth execution.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/StealFishEggs",
     "ImageAssetId": "rbxassetid://81180467194824",
-    "TagType": "HOT",
+    "TagType": "NONE",
     "LastUpdated": 1789044018,
     "PlaceId": 99183404085821
   },
@@ -31,7 +58,7 @@
     "Description": "A Roblox game focused on tapping to earn in-game money.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/Script/refs/heads/main/Tap4Money",
     "ImageAssetId": "rbxassetid://86754140730233",
-    "TagType": "HOT",
+    "TagType": "NONE",
     "LastUpdated": 1788923400,
     "PlaceId": 125410772032969
   },
@@ -40,7 +67,7 @@
     "Description": "A Roblox escape game featuring a tongue-themed challenge.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/Script/refs/heads/main/TongueEscape",
     "ImageAssetId": "rbxassetid://95912007405012",
-    "TagType": "HOT",
+    "TagType": "NONE",
     "LastUpdated": 1788923400,
     "PlaceId": 122245938604556
   },
@@ -49,7 +76,7 @@
     "Description": "Hunt powerful swords, progress through the game, and automate your adventure with useful features.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/SwordHunter",
     "ImageAssetId": "rbxassetid://72908050168979",
-    "TagType": "HOT",
+    "TagType": "NONE",
     "LastUpdated": 1788788403,
     "PlaceId": 124641526243488
   },
@@ -58,7 +85,7 @@
     "Description": "Improve your Pack RNG progression with automation and convenient quality-of-life features.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/PackRNG",
     "ImageAssetId": "rbxassetid://91430682984365",
-    "TagType": "HOT",
+    "TagType": "NONE",
     "LastUpdated": 1788788403,
     "PlaceId": 117752943664280
   },
@@ -67,7 +94,7 @@
     "Description": "Explore Agartha, progress through the game, and use convenient automation features to make your journey easier.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/MogorDie",
     "ImageAssetId": "rbxassetid://74234738636805",
-    "TagType": "HOT",
+    "TagType": "NONE",
     "LastUpdated": 1788788403,
     "PlaceId": 130641102725850
   },
@@ -76,7 +103,7 @@
     "Description": "Roll the dice, discover anime-themed rewards, and test your luck with fun automation features. ✨",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/AnimeDice",
     "ImageAssetId": "rbxassetid://77485736580238",
-    "TagType": "UPDATED",
+    "TagType": "NONE",
     "LastUpdated": 1788959396,
     "PlaceId": 113290951185459
   },
@@ -85,7 +112,7 @@
     "Description": "Pull unique eggs, discover exciting rewards, and explore what's waiting inside. Currently in beta.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/PullAnEgg",
     "ImageAssetId": "rbxassetid://101381322698409",
-    "TagType": "HOT",
+    "TagType": "NONE",
     "LastUpdated": 1788441412,
     "PlaceId": 70640255604878
   },
@@ -94,7 +121,7 @@
     "Description": "Collect lucky eggs, discover rewards, and test your luck with convenient automation features. Currently in beta.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/StealALuckyEgg",
     "ImageAssetId": "rbxassetid://78239349477965",
-    "TagType": "HOT",
+    "TagType": "NONE",
     "LastUpdated": 1788441412,
     "PlaceId": 123698673940079
   },
@@ -103,7 +130,7 @@
     "Description": "Jump, explore, and discover adorable animals while progressing through the game.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/JumpforAnimals",
     "ImageAssetId": "rbxassetid://114795309648965",
-    "TagType": "HOT",
+    "TagType": "NONE",
     "LastUpdated": 1788441412,
     "PlaceId": 126870639873289
   },
@@ -112,7 +139,7 @@
     "Description": "Explore the Northern Lands, battle powerful enemies, conquer challenging dungeons, and grow stronger with your friends.",
     "RawUrl": "https://raw.githubusercontent.com/joustingmatch/Ouroboros/main/loader.lua",
     "ImageAssetId": "rbxassetid://124969666393674",
-    "TagType": "HOT",
+    "TagType": "NONE",
     "LastUpdated": 1788171554,
     "PlaceId": 77649408247578
   },
@@ -121,7 +148,7 @@
     "Description": "Grow and upgrade your chicken while battling enemies and having fun with friends.",
     "RawUrl": "https://raw.githubusercontent.com/LynX99-9/komtolmmek2script/main/CyraaHub.lua",
     "ImageAssetId": "rbxassetid://107556080423499",
-    "TagType": "HOT",
+    "TagType": "NONE",
     "LastUpdated": 1788152251,
     "PlaceId": 0
   },
@@ -220,7 +247,7 @@
     "Description": "Automate grass cutting and progress through your adventure with convenient farming features.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/CutGrassAdventure",
     "ImageAssetId": "rbxassetid://115885312977657",
-    "TagType": "UPDATED",
+    "TagType": "NONE",
     "LastUpdated": 1788684749,
     "PlaceId": 90086669327265
   },
