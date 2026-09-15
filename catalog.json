@@ -9,6 +9,24 @@
     "PlaceId": 0
   },
   {
+  "Name": "Steal and Hatch Anime",
+  "Description": "A Roblox script focused on stealing and hatching anime-themed items, with automated gameplay features.",
+  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/StealandHatchAnime",
+  "ImageAssetId": "rbxassetid://103563302293588",
+  "TagType": "HOT",
+  "LastUpdated": 1789510239,
+  "PlaceId": 76377501906469
+  },
+  {
+  "Name": "Swing For Eggs",
+  "Description": "A Roblox script focused on swinging and collecting eggs, with automated gameplay features.",
+  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/SwingforEggs",
+  "ImageAssetId": "rbxassetid://100464822711525",
+  "TagType": "HOT",
+  "LastUpdated": 1789510239,
+  "PlaceId": 109203247742910
+  },
+  {
   "Name": "Steal an Egg for Squishy Dumplings!",
   "Description": "A Roblox script for Steal an Egg for Squishy Dumplings, featuring gameplay automation and useful in-game features.",
   "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/StealanEggforSquishyDumplings",
