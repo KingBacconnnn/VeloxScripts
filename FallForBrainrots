@@ -2,6 +2,7 @@ local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/rel
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local BrainrotStorage = ReplicatedStorage:WaitForChild("BrainrotStorage")
 local Events = BrainrotStorage:WaitForChild("Events")
@@ -29,6 +30,13 @@ local AdminCoinClaim = Events:WaitForChild("AdminCoinClaim")
 local RequestSell = Events:WaitForChild("RequestSell")
 local RequestSlotUpgrade = Events:WaitForChild("RequestSlotUpgrade")
 local RequestSlotMaxUpgrade = Events:WaitForChild("RequestSlotMaxUpgrade")
+local FuseItemSelect = Events:WaitForChild("FuseItemSelect")
+local FuseItemDeselect = Events:WaitForChild("FuseItemDeselect")
+local FuseStartRequest = Events:WaitForChild("FuseStartRequest")
+local FuseClaim = Events:WaitForChild("FuseClaim")
+local FuseCompleted = Events:WaitForChild("FuseCompleted")
+local FuseSlotsLoaded = Events:WaitForChild("FuseSlotsLoaded")
+local FuseFrameState = Events:WaitForChild("FuseFrameState")
 
 local autoRebirth = false
 local autoBuySpeed = false
@@ -44,6 +52,24 @@ local infFallSpeed = false
 local autoUpgrade = false
 local autoMaxUpgrade = false
 local autoCollectBrainrot = false
+
+local autoFuse = false
+local fuseThread = nil
+local fuseState = {
+    Pending = false,
+    Remaining = 0,
+    LastResult = nil,
+    LastResultAt = 0,
+    Count = 0,
+    LastStatus = "Idle",
+    RefreshAt = 0,
+}
+local fuseCFG = {
+    SelectDelay = 0.15,
+    PostCompleteDelay = 0.5,
+    LoopInterval = 1,
+    RefreshInterval = 5,
+}
 
 local savedBrainrotPos = nil
 local currentRarityIndex = 1
@@ -214,6 +240,168 @@ local function returnToSavedPos()
     end
 end
 
+local function formatFuseTime(seconds)
+    seconds = math.max(0, math.floor(tonumber(seconds) or 0))
+    local m = math.floor(seconds / 60)
+    local s = seconds % 60
+    return string.format("%d:%02d", m, s)
+end
+
+local function describeFuseResult(result)
+    if type(result) ~= "table" then return "None" end
+    local name = result.itemName or result.Name or "?"
+    local rarity = result.rarity or result.Rarity or "?"
+    local mutation = result.mutation or result.Mutation
+    if mutation and mutation ~= "Normal" then
+        return string.format("%s [%s] (%s)", name, rarity, mutation)
+    end
+    return string.format("%s [%s]", name, rarity)
+end
+
+local function getAvailableFuseTools()
+    local tools = {}
+    local backpack = LocalPlayer:FindFirstChild("Backpack")
+    if backpack then
+        for _, tool in ipairs(backpack:GetChildren()) do
+            if tool:IsA("Tool") and tool:GetAttribute("OriginalName") then
+                table.insert(tools, tool)
+            end
+        end
+    end
+    local char = LocalPlayer.Character
+    if char then
+        for _, tool in ipairs(char:GetChildren()) do
+            if tool:IsA("Tool") and tool:GetAttribute("OriginalName") then
+                table.insert(tools, tool)
+            end
+        end
+    end
+    return tools
+end
+
+local function requestFuseState()
+    if not FuseFrameState then return end
+    pcall(function()
+        FuseFrameState:FireServer(true)
+        task.wait(0.1)
+        FuseFrameState:FireServer(false)
+    end)
+end
+
+local function doFuseOnce()
+    if not FuseItemSelect or not FuseStartRequest then
+        fuseState.LastStatus = "Fuse remotes missing"
+        return false
+    end
+
+    if fuseState.Pending then
+        fuseState.LastStatus = ("Fuse in progress (%s left)"):format(formatFuseTime(fuseState.Remaining))
+        return false
+    end
+
+    local tools = getAvailableFuseTools()
+    if #tools < 4 then
+        fuseState.LastStatus = ("Need 4 brainrots (have %d)"):format(#tools)
+        return false
+    end
+
+    if FuseItemDeselect then
+        for slot = 1, 4 do
+            pcall(function() FuseItemDeselect:FireServer(slot) end)
+            task.wait(0.08)
+        end
+    end
+
+    for i = 1, 4 do
+        local tool = tools[i]
+        if not tool or not tool.Parent then
+            fuseState.LastStatus = "Tool disappeared mid-select"
+            return false
+        end
+        local ok = pcall(function() FuseItemSelect:FireServer(i, tool) end)
+        if not ok then
+            fuseState.LastStatus = ("Select failed on slot %d"):format(i)
+            return false
+        end
+        task.wait(fuseCFG.SelectDelay)
+    end
+
+    local ok, result = pcall(function() return FuseStartRequest:InvokeServer() end)
+    if not ok or type(result) ~= "table" or not result.success then
+        fuseState.LastStatus = "Fuse start failed"
+        return false
+    end
+
+    fuseState.Pending = true
+    fuseState.Remaining = tonumber(result.remaining) or 0
+    fuseState.LastStatus = ("Fusing (%s)"):format(formatFuseTime(fuseState.Remaining))
+    return true
+end
+
+local function fuseLoop()
+    while autoFuse do
+        local now = os.clock()
+        if now >= fuseState.RefreshAt then
+            fuseState.RefreshAt = now + fuseCFG.RefreshInterval
+            task.spawn(requestFuseState)
+        end
+        if not fuseState.Pending then
+            local ok, err = pcall(doFuseOnce)
+            if not ok then
+                fuseState.LastStatus = "Error: " .. tostring(err)
+            end
+        end
+        task.wait(fuseCFG.LoopInterval)
+    end
+    fuseThread = nil
+end
+
+local function startFuseLoop()
+    if fuseThread and coroutine.status(fuseThread) ~= "dead" then return end
+    fuseThread = task.spawn(function()
+        local ok, err = pcall(fuseLoop)
+        if not ok then warn("[Auto Fuse] " .. tostring(err)) end
+    end)
+end
+
+FuseSlotsLoaded.OnClientEvent:Connect(function(_, payload)
+    if type(payload) ~= "table" then return end
+    if payload.Completed and payload.Result then
+        fuseState.Pending = false
+        fuseState.Remaining = 0
+        fuseState.LastResult = payload.Result
+        fuseState.LastResultAt = os.clock()
+        fuseState.LastStatus = ("Ready: %s"):format(describeFuseResult(payload.Result))
+    elseif payload.Active then
+        fuseState.Pending = true
+        fuseState.Remaining = tonumber(payload.Remaining) or 0
+        fuseState.LastStatus = ("Fuse in progress (%s)"):format(formatFuseTime(fuseState.Remaining))
+    else
+        fuseState.Pending = false
+        fuseState.Remaining = 0
+        if not fuseState.LastResult then
+            fuseState.LastStatus = "Idle — no fuse in progress"
+        end
+    end
+end)
+
+FuseCompleted.OnClientEvent:Connect(function(payload)
+    fuseState.Pending = false
+    fuseState.Remaining = 0
+    if type(payload) == "table" then
+        fuseState.LastResult = payload
+        fuseState.LastResultAt = os.clock()
+    end
+    if autoFuse then
+        task.spawn(function()
+            task.wait(fuseCFG.PostCompleteDelay)
+            pcall(function() FuseClaim:FireServer() end)
+            fuseState.Count += 1
+            fuseState.LastStatus = ("Fused #%d — %s"):format(fuseState.Count, describeFuseResult(fuseState.LastResult))
+        end)
+    end
+end)
+
 local Window = WindUI:CreateWindow({
     Title = "🪂 Fall For Brainrots!",
     Icon = "bot",
@@ -229,10 +417,11 @@ local TabGeneral = Window:Tab({ Title = "General", Icon = "house" })
 local TabUpgrades = Window:Tab({ Title = "Upgrades", Icon = "trending-up" })
 local TabShops = Window:Tab({ Title = "Shops", Icon = "shopping-cart" })
 local TabCollector = Window:Tab({ Title = "Collector", Icon = "gem" })
+local TabFuse = Window:Tab({ Title = "Fuse", Icon = "flask-conical" })
 
 TabChangelog:Paragraph({
     Title = "Changelog",
-    Desc = "v1.1 - Organized tabs and improved UI\n\n- Auto Rebirth\n- Auto Collect Money\n- Inf Fall Speed\n- Auto Carry Upgrade\n- Auto Buy Speed (1/5/10)\n- Auto Upgrades (slot)\n- Auto Portal Buy & Equip\n- Auto Trail Buy & Equip\n- Auto Spin\n- Auto Admin Coins\n- Auto Brainrot Collector\n- Sell All Inventory\n\nAll features independent and toggleable.",
+    Desc = "v1.2 - Added Auto Fuse\n\n- Auto Fuse (with live state)\n- Auto Rebirth\n- Auto Collect Money\n- Inf Fall Speed\n- Auto Carry Upgrade\n- Auto Buy Speed (1/5/10)\n- Auto Upgrades (slot)\n- Auto Portal Buy & Equip\n- Auto Trail Buy & Equip\n- Auto Spin\n- Auto Admin Coins\n- Auto Brainrot Collector\n- Sell All Inventory",
     Color = "Green"
 })
 
@@ -404,7 +593,116 @@ TabCollector:Toggle({
     end
 })
 
--- Event connections (wrapped in pcall to avoid nil errors)
+TabFuse:Slider({
+    Title = "Loop Interval",
+    Desc = "Set how often the hub checks the Fuse machine status.",
+    Value = { Min = 0.25, Max = 5, Default = fuseCFG.LoopInterval },
+    Callback = function(v)
+        fuseCFG.LoopInterval = math.max(0.25, tonumber(v) or 1)
+    end
+})
+TabFuse:Slider({
+    Title = "State Refresh",
+    Desc = "Set how often the hub asks the server for the current fuse state.",
+    Value = { Min = 1, Max = 30, Default = fuseCFG.RefreshInterval },
+    Callback = function(v)
+        fuseCFG.RefreshInterval = math.max(1, tonumber(v) or 5)
+    end
+})
+TabFuse:Toggle({
+    Title = "Auto Fuse",
+    Desc = "Automatically selects 4 brainrots, starts a fuse, and claims the result.",
+    Value = false,
+    Callback = function(state)
+        autoFuse = state
+        if state then
+            fuseState.LastStatus = "Starting..."
+            requestFuseState()
+            startFuseLoop()
+        else
+            fuseState.LastStatus = "Stopped"
+        end
+    end
+})
+TabFuse:Button({
+    Title = "Refresh State",
+    Desc = "Asks the server for the current fuse state.",
+    Callback = function()
+        requestFuseState()
+    end
+})
+TabFuse:Button({
+    Title = "Fuse Once",
+    Desc = "Runs a single Fuse cycle manually.",
+    Callback = function()
+        doFuseOnce()
+    end
+})
+
+local fuseStatusPara = TabFuse:Paragraph({
+    Title = "Status",
+    Desc = "Idle — enable Auto Fuse to begin.",
+    Color = "White",
+})
+
+FuseSlotsLoaded.OnClientEvent:Connect(function() end)
+
+task.spawn(function()
+    local lastTick = 0
+    while true do
+        RunService.Heartbeat:Wait()
+        if fuseState.Pending and fuseState.Remaining > 0 then
+            local now = os.clock()
+            if now - lastTick >= 1 then
+                lastTick = now
+                fuseState.Remaining = math.max(0, fuseState.Remaining - 1)
+                if fuseState.Remaining <= 0 then
+                    fuseState.LastStatus = "Fuse timer ended — awaiting result"
+                end
+            end
+        end
+    end
+end)
+
+task.spawn(function()
+    while true do
+        task.wait(0.5)
+        if fuseStatusPara then
+            local fuseDisplay = "IDLE"
+            if fuseState.Pending then
+                if fuseState.Remaining > 0 then
+                    fuseDisplay = "IN PROGRESS (" .. formatFuseTime(fuseState.Remaining) .. ")"
+                else
+                    fuseDisplay = "IN PROGRESS"
+                end
+            elseif fuseState.LastResult then
+                fuseDisplay = "READY TO CLAIM"
+            end
+            local resultText = "None"
+            if fuseState.LastResult then
+                resultText = describeFuseResult(fuseState.LastResult)
+            end
+            pcall(function()
+                fuseStatusPara:SetDesc((
+                    "Running ......... %s\n" ..
+                    "Fuse State ...... %s\n" ..
+                    "Remaining ....... %s\n" ..
+                    "Fuses ........... %d\n" ..
+                    "Last Result ..... %s\n" ..
+                    "Last status ..... %s"
+                ):format(
+                    tostring(autoFuse),
+                    fuseDisplay,
+                    formatFuseTime(fuseState.Remaining),
+                    fuseState.Count,
+                    resultText,
+                    fuseState.LastStatus
+                ))
+            end)
+        end
+    end
+end)
+
 pcall(function()
     WheelSyncSpins.OnClientEvent:Connect(function(count) spinCount = count end)
 end)
@@ -429,7 +727,7 @@ local function fetchWheelData()
 end
 fetchWheelData()
 
--- Loops
+requestFuseState()
 
 task.spawn(function()
     while true do
