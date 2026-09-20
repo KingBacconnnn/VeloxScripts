@@ -9,6 +9,15 @@
     "PlaceId": 0
   },
   {
+  "Name": "Rivals",
+  "Description": "UNDETECTABLE Still in Beta. You may encounter some bugs while using the beta version, but don’t worry! I’ll continue updating and improving it every week, fixing bugs, improving stability, and working on better anti-cheat compatibility.",
+  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/Rivals",
+  "ImageAssetId": "rbxassetid://113623358319230",
+  "TagType": "HOT",
+  "LastUpdated": 1789918798,
+  "PlaceId": 17625359962
+  },
+  {
   "Name": "Steal and Hatch Anime",
   "Description": "A Roblox script focused on stealing and hatching anime-themed items, with automated gameplay features.",
   "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/StealandHatchAnime",
