@@ -6,70 +6,134 @@
     "ImageAssetId": "rbxassetid://120627766450661",
     "TagType": "NONE",
     "LastUpdated": 1783699200,
-    "PlaceId": 0
+    "PlaceId": 0,
+    "Category": "Farming",
+    "Tags": [
+      "Brainrot",
+      "Farming",
+      "Automation"
+    ]
   },
   {
-  "Name": "Murder Mystery 2",
-  "Description": "Roblox mystery game where players are assigned different roles and must survive, investigate, or stop the murderer. Collect coins, unlock and trade unique items, and test your skills across different maps.",
-  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/MMTWO",
-  "ImageAssetId": "rbxassetid://139595891026880",
-  "TagType": "HOT",
-  "LastUpdated": 1789985362,
-  "PlaceId": 142823291
+    "Name": "Murder Mystery 2",
+    "Description": "Roblox mystery game where players are assigned different roles and must survive, investigate, or stop the murderer. Collect coins, unlock and trade unique items, and test your skills across different maps.",
+    "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/MMTWO",
+    "ImageAssetId": "rbxassetid://139595891026880",
+    "TagType": "HOT",
+    "LastUpdated": 1789985362,
+    "PlaceId": 142823291,
+    "Category": "Mystery",
+    "Tags": [
+      "Mystery",
+      "PvP",
+      "Survival",
+      "Roleplay",
+      "Trading",
+      "Collecting"
+    ]
   },
   {
-  "Name": "Rivals",
-  "Description": "UNDETECTABLE Still in Beta. You may encounter some bugs while using the beta version, but don’t worry! I’ll continue updating and improving it every week, fixing bugs, improving stability, and working on better anti-cheat compatibility.",
-  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/Rivals",
-  "ImageAssetId": "rbxassetid://113623358319230",
-  "TagType": "UPDATED",
-  "LastUpdated": 1789964862,
-  "PlaceId": 17625359962
+    "Name": "Rivals",
+    "Description": "UNDETECTABLE Still in Beta. You may encounter some bugs while using the beta version, but don’t worry! I’ll continue updating and improving it every week, fixing bugs, improving stability, and working on better anti-cheat compatibility.",
+    "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/Rivals",
+    "ImageAssetId": "rbxassetid://113623358319230",
+    "TagType": "UPDATED",
+    "LastUpdated": 1789964862,
+    "PlaceId": 17625359962,
+    "Category": "Combat",
+    "Tags": [
+      "PvP",
+      "FPS",
+      "Shooter",
+      "Combat"
+    ]
   },
   {
-  "Name": "Steal and Hatch Anime",
-  "Description": "A Roblox script focused on stealing and hatching anime-themed items, with automated gameplay features.",
-  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/StealandHatchAnime",
-  "ImageAssetId": "rbxassetid://103563302293588",
-  "TagType": "NONE",
-  "LastUpdated": 1789510239,
-  "PlaceId": 76377501906469
+    "Name": "Steal and Hatch Anime",
+    "Description": "A Roblox script focused on stealing and hatching anime-themed items, with automated gameplay features.",
+    "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/StealandHatchAnime",
+    "ImageAssetId": "rbxassetid://103563302293588",
+    "TagType": "NONE",
+    "LastUpdated": 1789510239,
+    "PlaceId": 76377501906469,
+    "Category": "Anime",
+    "Tags": [
+      "Eggs",
+      "Collecting",
+      "Anime",
+      "Farming",
+      "Automation",
+      "Stealing"
+    ]
   },
   {
-  "Name": "Swing For Eggs",
-  "Description": "A Roblox script focused on swinging and collecting eggs, with automated gameplay features.",
-  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/SwingforEggs",
-  "ImageAssetId": "rbxassetid://100464822711525",
-  "TagType": "NONE",
-  "LastUpdated": 1789510239,
-  "PlaceId": 109203247742910
+    "Name": "Swing For Eggs",
+    "Description": "A Roblox script focused on swinging and collecting eggs, with automated gameplay features.",
+    "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/SwingforEggs",
+    "ImageAssetId": "rbxassetid://100464822711525",
+    "TagType": "NONE",
+    "LastUpdated": 1789510239,
+    "PlaceId": 109203247742910,
+    "Category": "Eggs",
+    "Tags": [
+      "Eggs",
+      "Collecting",
+      "Movement",
+      "Speed",
+      "Farming",
+      "Automation"
+    ]
   },
   {
-  "Name": "Steal an Egg for Squishy Dumplings!",
-  "Description": "A Roblox script for Steal an Egg for Squishy Dumplings, featuring gameplay automation and useful in-game features.",
-  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/StealanEggforSquishyDumplings",
-  "ImageAssetId": "rbxassetid://104341666679181",
-  "TagType": "NONE",
-  "LastUpdated": 1789305682,
-  "PlaceId": 134679507313109
+    "Name": "Steal an Egg for Squishy Dumplings!",
+    "Description": "A Roblox script for Steal an Egg for Squishy Dumplings, featuring gameplay automation and useful in-game features.",
+    "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/StealanEggforSquishyDumplings",
+    "ImageAssetId": "rbxassetid://104341666679181",
+    "TagType": "NONE",
+    "LastUpdated": 1789305682,
+    "PlaceId": 134679507313109,
+    "Category": "Eggs",
+    "Tags": [
+      "Eggs",
+      "Collecting",
+      "Farming",
+      "Automation",
+      "Stealing"
+    ]
   },
   {
-  "Name": "Grow Beanstalk to Steal An Egg",
-  "Description": "A Roblox script for Grow Beanstalk to Steal An Egg, providing helpful features and automation for the game.",
-  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/GrowBeanstalktoStealAnEgg",
-  "ImageAssetId": "rbxassetid://97939390177713",
-  "TagType": "NONE",
-  "LastUpdated": 1789305682,
-  "PlaceId": 87695656520229
+    "Name": "Grow Beanstalk to Steal An Egg",
+    "Description": "A Roblox script for Grow Beanstalk to Steal An Egg, providing helpful features and automation for the game.",
+    "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/GrowBeanstalktoStealAnEgg",
+    "ImageAssetId": "rbxassetid://97939390177713",
+    "TagType": "NONE",
+    "LastUpdated": 1789305682,
+    "PlaceId": 87695656520229,
+    "Category": "Eggs",
+    "Tags": [
+      "Eggs",
+      "Collecting",
+      "Farming",
+      "Automation",
+      "Stealing"
+    ]
   },
   {
-  "Name": "Steal a Giant Egg",
-  "Description": "A Roblox script for Steal a Giant Egg, featuring useful gameplay features and automation.",
-  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/StealaGiantEgg",
-  "ImageAssetId": "rbxassetid://73160996227994",
-  "TagType": "NONE",
-  "LastUpdated": 1789305682,
-  "PlaceId": 136448020793455
+    "Name": "Steal a Giant Egg",
+    "Description": "A Roblox script for Steal a Giant Egg, featuring useful gameplay features and automation.",
+    "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/StealaGiantEgg",
+    "ImageAssetId": "rbxassetid://73160996227994",
+    "TagType": "NONE",
+    "LastUpdated": 1789305682,
+    "PlaceId": 136448020793455,
+    "Category": "Eggs",
+    "Tags": [
+      "Eggs",
+      "Collecting",
+      "Farming",
+      "Automation",
+      "Stealing"
+    ]
   },
   {
     "Name": "+1 Mog Evolution",
@@ -78,7 +142,13 @@
     "ImageAssetId": "rbxassetid://125629794962998",
     "TagType": "NONE",
     "LastUpdated": 1789133163,
-    "PlaceId": 92648272637932
+    "PlaceId": 92648272637932,
+    "Category": "Evolution",
+    "Tags": [
+      "Farming",
+      "Automation",
+      "Progression"
+    ]
   },
   {
     "Name": "Steal Fish Eggs",
@@ -87,7 +157,13 @@
     "ImageAssetId": "rbxassetid://81180467194824",
     "TagType": "NONE",
     "LastUpdated": 1789044018,
-    "PlaceId": 99183404085821
+    "PlaceId": 99183404085821,
+    "Category": "Eggs",
+    "Tags": [
+      "Eggs",
+      "Collecting",
+      "Stealing"
+    ]
   },
   {
     "Name": "Tap 4 Money 💸",
@@ -96,7 +172,12 @@
     "ImageAssetId": "rbxassetid://86754140730233",
     "TagType": "NONE",
     "LastUpdated": 1788923400,
-    "PlaceId": 125410772032969
+    "PlaceId": 125410772032969,
+    "Category": "Clicker",
+    "Tags": [
+      "Clicker",
+      "Progression"
+    ]
   },
   {
     "Name": "+1 Tongue Escape",
@@ -105,7 +186,12 @@
     "ImageAssetId": "rbxassetid://95912007405012",
     "TagType": "NONE",
     "LastUpdated": 1788923400,
-    "PlaceId": 122245938604556
+    "PlaceId": 122245938604556,
+    "Category": "Obby",
+    "Tags": [
+      "Obby",
+      "Escape"
+    ]
   },
   {
     "Name": "[UPD 2] Sword Hunter",
@@ -114,7 +200,15 @@
     "ImageAssetId": "rbxassetid://72908050168979",
     "TagType": "NONE",
     "LastUpdated": 1788788403,
-    "PlaceId": 124641526243488
+    "PlaceId": 124641526243488,
+    "Category": "Combat",
+    "Tags": [
+      "Farming",
+      "Automation",
+      "Combat",
+      "Swords",
+      "Adventure"
+    ]
   },
   {
     "Name": "[🛡CLANS] Pack RNG",
@@ -123,7 +217,14 @@
     "ImageAssetId": "rbxassetid://91430682984365",
     "TagType": "NONE",
     "LastUpdated": 1788788403,
-    "PlaceId": 117752943664280
+    "PlaceId": 117752943664280,
+    "Category": "RNG",
+    "Tags": [
+      "RNG",
+      "Luck",
+      "Farming",
+      "Automation"
+    ]
   },
   {
     "Name": "🌌 Agartha 🌌 Mog or Die",
@@ -132,7 +233,12 @@
     "ImageAssetId": "rbxassetid://74234738636805",
     "TagType": "NONE",
     "LastUpdated": 1788788403,
-    "PlaceId": 130641102725850
+    "PlaceId": 130641102725850,
+    "Category": "Simulator",
+    "Tags": [
+      "Farming",
+      "Automation"
+    ]
   },
   {
     "Name": "[🎉UPD 4] Anime Dice",
@@ -141,7 +247,16 @@
     "ImageAssetId": "rbxassetid://77485736580238",
     "TagType": "NONE",
     "LastUpdated": 1789549433,
-    "PlaceId": 113290951185459
+    "PlaceId": 113290951185459,
+    "Category": "Anime",
+    "Tags": [
+      "Anime",
+      "RNG",
+      "Luck",
+      "Farming",
+      "Automation",
+      "Collecting"
+    ]
   },
   {
     "Name": "Pull An Egg",
@@ -150,7 +265,12 @@
     "ImageAssetId": "rbxassetid://101381322698409",
     "TagType": "NONE",
     "LastUpdated": 1788441412,
-    "PlaceId": 70640255604878
+    "PlaceId": 70640255604878,
+    "Category": "Simulator",
+    "Tags": [
+      "Eggs",
+      "Collecting"
+    ]
   },
   {
     "Name": "Steal A Lucky Egg",
@@ -159,7 +279,17 @@
     "ImageAssetId": "rbxassetid://78239349477965",
     "TagType": "NONE",
     "LastUpdated": 1788441412,
-    "PlaceId": 123698673940079
+    "PlaceId": 123698673940079,
+    "Category": "Eggs",
+    "Tags": [
+      "Eggs",
+      "Collecting",
+      "RNG",
+      "Luck",
+      "Farming",
+      "Automation",
+      "Stealing"
+    ]
   },
   {
     "Name": "Jump for Animals!",
@@ -168,7 +298,13 @@
     "ImageAssetId": "rbxassetid://114795309648965",
     "TagType": "NONE",
     "LastUpdated": 1788441412,
-    "PlaceId": 126870639873289
+    "PlaceId": 126870639873289,
+    "Category": "Animals",
+    "Tags": [
+      "Movement",
+      "Speed",
+      "Animals"
+    ]
   },
   {
     "Name": "[Northern Lands] Dungeon Quest Reborn",
@@ -177,7 +313,14 @@
     "ImageAssetId": "rbxassetid://124969666393674",
     "TagType": "NONE",
     "LastUpdated": 1788171554,
-    "PlaceId": 77649408247578
+    "PlaceId": 77649408247578,
+    "Category": "Dungeon",
+    "Tags": [
+      "Combat",
+      "Social",
+      "Adventure",
+      "Dungeons"
+    ]
   },
   {
     "Name": "Grow a Chicken Fighter",
@@ -186,7 +329,13 @@
     "ImageAssetId": "rbxassetid://107556080423499",
     "TagType": "NONE",
     "LastUpdated": 1788152251,
-    "PlaceId": 0
+    "PlaceId": 0,
+    "Category": "Animals",
+    "Tags": [
+      "Combat",
+      "Animals",
+      "Social"
+    ]
   },
   {
     "Name": "[🥳] Make a Party",
@@ -195,7 +344,11 @@
     "ImageAssetId": "rbxassetid://107516707934052",
     "TagType": "NONE",
     "LastUpdated": 1787466443,
-    "PlaceId": 82570142697239
+    "PlaceId": 82570142697239,
+    "Category": "Social",
+    "Tags": [
+      "Social"
+    ]
   },
   {
     "Name": "⚡ Power a City",
@@ -204,7 +357,11 @@
     "ImageAssetId": "rbxassetid://108446142906731",
     "TagType": "NONE",
     "LastUpdated": 1787466443,
-    "PlaceId": 127475054933484
+    "PlaceId": 127475054933484,
+    "Category": "Building",
+    "Tags": [
+      "Building"
+    ]
   },
   {
     "Name": "Build an AI [💻 HACK]",
@@ -213,7 +370,11 @@
     "ImageAssetId": "rbxassetid://119924073988972",
     "TagType": "NONE",
     "LastUpdated": 1787466443,
-    "PlaceId": 84637477108843
+    "PlaceId": 84637477108843,
+    "Category": "Tech",
+    "Tags": [
+      "Building"
+    ]
   },
   {
     "Name": "+1 Wall Hop Obby Escape",
@@ -222,7 +383,14 @@
     "ImageAssetId": "rbxassetid://89119135342886",
     "TagType": "NONE",
     "LastUpdated": 1787466443,
-    "PlaceId": 140462309938712
+    "PlaceId": 140462309938712,
+    "Category": "Obby",
+    "Tags": [
+      "Obby",
+      "Escape",
+      "Movement",
+      "Speed"
+    ]
   },
   {
     "Name": "Unscathed RNG",
@@ -231,7 +399,13 @@
     "ImageAssetId": "rbxassetid://73467955007228",
     "TagType": "NONE",
     "LastUpdated": 1787466443,
-    "PlaceId": 122951224417794
+    "PlaceId": 122951224417794,
+    "Category": "RNG",
+    "Tags": [
+      "RNG",
+      "Luck",
+      "Collecting"
+    ]
   },
   {
     "Name": "+1 High Jump Power",
@@ -240,7 +414,12 @@
     "ImageAssetId": "rbxassetid://121505296815495",
     "TagType": "NONE",
     "LastUpdated": 1787223474,
-    "PlaceId": 83388257263676
+    "PlaceId": 83388257263676,
+    "Category": "Simulator",
+    "Tags": [
+      "Movement",
+      "Speed"
+    ]
   },
   {
     "Name": "+1 Web Swing Escape",
@@ -249,7 +428,14 @@
     "ImageAssetId": "rbxassetid://129142535236862",
     "TagType": "NONE",
     "LastUpdated": 1787223474,
-    "PlaceId": 110668201954727
+    "PlaceId": 110668201954727,
+    "Category": "Obby",
+    "Tags": [
+      "Obby",
+      "Escape",
+      "Movement",
+      "Speed"
+    ]
   },
   {
     "Name": "[NEW] My Toll Farm!",
@@ -258,7 +444,14 @@
     "ImageAssetId": "rbxassetid://82564760235836",
     "TagType": "NONE",
     "LastUpdated": 1787223474,
-    "PlaceId": 96425088123775
+    "PlaceId": 96425088123775,
+    "Category": "Farming",
+    "Tags": [
+      "Farming",
+      "Automation",
+      "Building",
+      "Collecting"
+    ]
   },
   {
     "Name": "🪂 Fall For Brainrots!",
@@ -267,7 +460,13 @@
     "ImageAssetId": "rbxassetid://83344840395172",
     "TagType": "NONE",
     "LastUpdated": 1789549433,
-    "PlaceId": 86368783421928
+    "PlaceId": 86368783421928,
+    "Category": "Farming",
+    "Tags": [
+      "Brainrot",
+      "Farming",
+      "Automation"
+    ]
   },
   {
     "Name": "⚽ Jump To Steal Soccer Players ⚽",
@@ -276,7 +475,16 @@
     "ImageAssetId": "rbxassetid://139973393465382",
     "TagType": "NONE",
     "LastUpdated": 1788863993,
-    "PlaceId": 133294838637122
+    "PlaceId": 133294838637122,
+    "Category": "Soccer",
+    "Tags": [
+      "Movement",
+      "Speed",
+      "Farming",
+      "Automation",
+      "Soccer",
+      "Collecting"
+    ]
   },
   {
     "Name": "[X2] +1 Cut Grass Adventure",
@@ -285,7 +493,12 @@
     "ImageAssetId": "rbxassetid://115885312977657",
     "TagType": "NONE",
     "LastUpdated": 1788684749,
-    "PlaceId": 90086669327265
+    "PlaceId": 90086669327265,
+    "Category": "Farming",
+    "Tags": [
+      "Farming",
+      "Automation"
+    ]
   },
   {
     "Name": "[NOW] +1 Jump Crunchy ASMR Escape!",
@@ -294,7 +507,17 @@
     "ImageAssetId": "rbxassetid://70770599354986",
     "TagType": "NONE",
     "LastUpdated": 1786885620,
-    "PlaceId": 83264774625004
+    "PlaceId": 83264774625004,
+    "Category": "ASMR",
+    "Tags": [
+      "Obby",
+      "Escape",
+      "Movement",
+      "Speed",
+      "Farming",
+      "Automation",
+      "ASMR"
+    ]
   },
   {
     "Name": "Steal An Egg",
@@ -303,7 +526,13 @@
     "ImageAssetId": "rbxassetid://99167825730320",
     "TagType": "NONE",
     "LastUpdated": 1787520255,
-    "PlaceId": 107778070777162
+    "PlaceId": 107778070777162,
+    "Category": "Eggs",
+    "Tags": [
+      "Eggs",
+      "Collecting",
+      "Stealing"
+    ]
   },
   {
     "Name": "Magic Loot[🦕Dino Event]",
@@ -312,7 +541,14 @@
     "ImageAssetId": "rbxassetid://100090397593569",
     "TagType": "NONE",
     "LastUpdated": 1786320957,
-    "PlaceId": 133188236593503
+    "PlaceId": 133188236593503,
+    "Category": "Farming",
+    "Tags": [
+      "Farming",
+      "Automation",
+      "Animals",
+      "Collecting"
+    ]
   },
   {
     "Name": "+1 Height Per Jump",
@@ -321,7 +557,12 @@
     "ImageAssetId": "rbxassetid://128914503653072",
     "TagType": "NONE",
     "LastUpdated": 1785900306,
-    "PlaceId": 0
+    "PlaceId": 0,
+    "Category": "Simulator",
+    "Tags": [
+      "Movement",
+      "Speed"
+    ]
   },
   {
     "Name": "[CRAFT🔨] Anime Card Farm",
@@ -330,7 +571,16 @@
     "ImageAssetId": "rbxassetid://112827759842870",
     "TagType": "NONE",
     "LastUpdated": 1785900306,
-    "PlaceId": 0
+    "PlaceId": 0,
+    "Category": "Anime",
+    "Tags": [
+      "Anime",
+      "Farming",
+      "Automation",
+      "Building",
+      "Crafting",
+      "Collecting"
+    ]
   },
   {
     "Name": "[🍯] Unbox ASMR!",
@@ -339,7 +589,14 @@
     "ImageAssetId": "rbxassetid://111049459251843",
     "TagType": "NONE",
     "LastUpdated": 1785593914,
-    "PlaceId": 0
+    "PlaceId": 0,
+    "Category": "ASMR",
+    "Tags": [
+      "Farming",
+      "Automation",
+      "ASMR",
+      "Collecting"
+    ]
   },
   {
     "Name": "[🍌] +1 Banana Monkey Destruction",
@@ -348,7 +605,13 @@
     "ImageAssetId": "rbxassetid://109800845162836",
     "TagType": "NONE",
     "LastUpdated": 1785593914,
-    "PlaceId": 0
+    "PlaceId": 0,
+    "Category": "Simulator",
+    "Tags": [
+      "Farming",
+      "Automation",
+      "Collecting"
+    ]
   },
   {
     "Name": "[X5] +1 Backflip Keyboard Escape",
@@ -357,7 +620,16 @@
     "ImageAssetId": "rbxassetid://78362287868730",
     "TagType": "NONE",
     "LastUpdated": 1785074133,
-    "PlaceId": 0
+    "PlaceId": 0,
+    "Category": "Obby",
+    "Tags": [
+      "Obby",
+      "Escape",
+      "Movement",
+      "Speed",
+      "Farming",
+      "Automation"
+    ]
   },
   {
     "Name": "Lucky Dumplings",
@@ -366,7 +638,15 @@
     "ImageAssetId": "rbxassetid://129074514749498",
     "TagType": "NONE",
     "LastUpdated": 1784986924,
-    "PlaceId": 0
+    "PlaceId": 0,
+    "Category": "Farming",
+    "Tags": [
+      "RNG",
+      "Luck",
+      "Farming",
+      "Automation",
+      "Collecting"
+    ]
   },
   {
     "Name": "+1 Katana Evolution",
@@ -375,7 +655,13 @@
     "ImageAssetId": "rbxassetid://139541792044096",
     "TagType": "NONE",
     "LastUpdated": 1784812886,
-    "PlaceId": 0
+    "PlaceId": 0,
+    "Category": "Simulator",
+    "Tags": [
+      "Farming",
+      "Automation",
+      "Combat"
+    ]
   },
   {
     "Name": "Break Tape For Brainrots",
@@ -384,7 +670,14 @@
     "ImageAssetId": "rbxassetid://81783802613435",
     "TagType": "NONE",
     "LastUpdated": 1784801398,
-    "PlaceId": 0
+    "PlaceId": 0,
+    "Category": "Farming",
+    "Tags": [
+      "Brainrot",
+      "Farming",
+      "Automation",
+      "Clicker"
+    ]
   },
   {
     "Name": "[⭐] +1 Followers Per Click",
@@ -393,7 +686,15 @@
     "ImageAssetId": "rbxassetid://99514140288698",
     "TagType": "NONE",
     "LastUpdated": 1784732571,
-    "PlaceId": 0
+    "PlaceId": 0,
+    "Category": "Clicker",
+    "Tags": [
+      "Farming",
+      "Automation",
+      "Building",
+      "Clicker",
+      "Progression"
+    ]
   },
   {
     "Name": "Dino Hunters [UPD]",
@@ -402,7 +703,16 @@
     "ImageAssetId": "rbxassetid://101328890837966",
     "TagType": "NONE",
     "LastUpdated": 1784777279,
-    "PlaceId": 0
+    "PlaceId": 0,
+    "Category": "Animals",
+    "Tags": [
+      "Eggs",
+      "Collecting",
+      "Farming",
+      "Automation",
+      "Crafting",
+      "Animals"
+    ]
   },
   {
     "Name": "[🧬] Throw a Coin",
@@ -411,7 +721,13 @@
     "ImageAssetId": "rbxassetid://80474715145780",
     "TagType": "NONE",
     "LastUpdated": 1784550168,
-    "PlaceId": 0
+    "PlaceId": 0,
+    "Category": "Action",
+    "Tags": [
+      "Farming",
+      "Automation",
+      "Progression"
+    ]
   },
   {
     "Name": "[🏆] Build an ASMR Tower",
@@ -420,7 +736,14 @@
     "ImageAssetId": "rbxassetid://105645768552627",
     "TagType": "NONE",
     "LastUpdated": 1784458357,
-    "PlaceId": 0
+    "PlaceId": 0,
+    "Category": "ASMR",
+    "Tags": [
+      "Farming",
+      "Automation",
+      "Building",
+      "ASMR"
+    ]
   },
   {
     "Name": "+1 Bottle Flip Obby Escape",
@@ -429,7 +752,14 @@
     "ImageAssetId": "rbxassetid://138472026799705",
     "TagType": "NONE",
     "LastUpdated": 1784374800,
-    "PlaceId": 0
+    "PlaceId": 0,
+    "Category": "Obby",
+    "Tags": [
+      "Obby",
+      "Escape",
+      "Farming",
+      "Automation"
+    ]
   },
   {
     "Name": "+1 Pickaxe Swing Escape",
@@ -438,7 +768,16 @@
     "ImageAssetId": "rbxassetid://73842518331517",
     "TagType": "NONE",
     "LastUpdated": 1785024759,
-    "PlaceId": 0
+    "PlaceId": 0,
+    "Category": "Obby",
+    "Tags": [
+      "Obby",
+      "Escape",
+      "Movement",
+      "Speed",
+      "Farming",
+      "Automation"
+    ]
   },
   {
     "Name": "Find and Mark!",
@@ -447,7 +786,11 @@
     "ImageAssetId": "rbxassetid://70521315953311",
     "TagType": "NONE",
     "LastUpdated": 1784044800,
-    "PlaceId": 0
+    "PlaceId": 0,
+    "Category": "Simulator",
+    "Tags": [
+      "Automation"
+    ]
   },
   {
     "Name": "My Giant Sandwich",
@@ -456,7 +799,12 @@
     "ImageAssetId": "rbxassetid://118225999381998",
     "TagType": "NONE",
     "LastUpdated": 1784131200,
-    "PlaceId": 0
+    "PlaceId": 0,
+    "Category": "Simulator",
+    "Tags": [
+      "Farming",
+      "Automation"
+    ]
   },
   {
     "Name": "Build a base RNG 🎲",
@@ -465,7 +813,15 @@
     "ImageAssetId": "rbxassetid://128276768200520",
     "TagType": "NONE",
     "LastUpdated": 1787134306,
-    "PlaceId": 99108783264633
+    "PlaceId": 99108783264633,
+    "Category": "RNG",
+    "Tags": [
+      "RNG",
+      "Luck",
+      "Farming",
+      "Automation",
+      "Building"
+    ]
   },
   {
     "Name": "[W3]+1 Speed Moonwalk Escape🌙",
@@ -474,7 +830,16 @@
     "ImageAssetId": "rbxassetid://81812983343513",
     "TagType": "NONE",
     "LastUpdated": 1783872000,
-    "PlaceId": 0
+    "PlaceId": 0,
+    "Category": "Obby",
+    "Tags": [
+      "Obby",
+      "Escape",
+      "Movement",
+      "Speed",
+      "Farming",
+      "Automation"
+    ]
   },
   {
     "Name": "Speedsters Infinite⚡",
@@ -483,7 +848,14 @@
     "ImageAssetId": "rbxassetid://83476895882409",
     "TagType": "NONE",
     "LastUpdated": 1783872000,
-    "PlaceId": 0
+    "PlaceId": 0,
+    "Category": "Simulator",
+    "Tags": [
+      "Movement",
+      "Speed",
+      "Farming",
+      "Automation"
+    ]
   },
   {
     "Name": "+1 Hack Per Click",
@@ -492,7 +864,15 @@
     "ImageAssetId": "rbxassetid://114139529313872",
     "TagType": "NONE",
     "LastUpdated": 1783699200,
-    "PlaceId": 0
+    "PlaceId": 0,
+    "Category": "Clicker",
+    "Tags": [
+      "Eggs",
+      "Collecting",
+      "Farming",
+      "Automation",
+      "Clicker"
+    ]
   },
   {
     "Name": "+1 Speed Slime Keyboard Escape",
@@ -501,7 +881,16 @@
     "ImageAssetId": "rbxassetid://104463734310957",
     "TagType": "NONE",
     "LastUpdated": 1783699200,
-    "PlaceId": 0
+    "PlaceId": 0,
+    "Category": "Obby",
+    "Tags": [
+      "Obby",
+      "Escape",
+      "Movement",
+      "Speed",
+      "Farming",
+      "Automation"
+    ]
   },
   {
     "Name": "Throw Hammers for Brainrots!",
@@ -510,7 +899,13 @@
     "ImageAssetId": "rbxassetid://115011163526994",
     "TagType": "NONE",
     "LastUpdated": 1783094400,
-    "PlaceId": 0
+    "PlaceId": 0,
+    "Category": "Farming",
+    "Tags": [
+      "Brainrot",
+      "Farming",
+      "Automation"
+    ]
   },
   {
     "Name": "Fill the Bucket",
@@ -519,7 +914,13 @@
     "ImageAssetId": "rbxassetid://84394647849599",
     "TagType": "NONE",
     "LastUpdated": 1783094400,
-    "PlaceId": 0
+    "PlaceId": 0,
+    "Category": "Farming",
+    "Tags": [
+      "Farming",
+      "Automation",
+      "Building"
+    ]
   },
   {
     "Name": "🌲 Axe RNG",
@@ -528,7 +929,14 @@
     "ImageAssetId": "rbxassetid://85206671976803",
     "TagType": "NONE",
     "LastUpdated": 1782489600,
-    "PlaceId": 0
+    "PlaceId": 0,
+    "Category": "RNG",
+    "Tags": [
+      "RNG",
+      "Luck",
+      "Farming",
+      "Automation"
+    ]
   },
   {
     "Name": "Grow a Garden 2",
@@ -537,7 +945,12 @@
     "ImageAssetId": "rbxassetid://132244635622758",
     "TagType": "NONE",
     "LastUpdated": 1782489600,
-    "PlaceId": 0
+    "PlaceId": 0,
+    "Category": "Farming",
+    "Tags": [
+      "Farming",
+      "Automation"
+    ]
   },
   {
     "Name": "[X5] +1 Speed Keyboard Escape | Emojis",
@@ -546,7 +959,16 @@
     "ImageAssetId": "rbxassetid://97222391222389",
     "TagType": "NONE",
     "LastUpdated": 1783094400,
-    "PlaceId": 0
+    "PlaceId": 0,
+    "Category": "Obby",
+    "Tags": [
+      "Obby",
+      "Escape",
+      "Movement",
+      "Speed",
+      "Farming",
+      "Automation"
+    ]
   },
   {
     "Name": "Build A Soccer Squad! [PRIME]",
@@ -555,7 +977,14 @@
     "ImageAssetId": "rbxassetid://94846625856501",
     "TagType": "NONE",
     "LastUpdated": 1782489600,
-    "PlaceId": 0
+    "PlaceId": 0,
+    "Category": "Soccer",
+    "Tags": [
+      "Farming",
+      "Automation",
+      "Soccer",
+      "Building"
+    ]
   },
   {
     "Name": "Tree RNG",
@@ -564,7 +993,15 @@
     "ImageAssetId": "rbxassetid://121827855136249",
     "TagType": "NONE",
     "LastUpdated": 1782489600,
-    "PlaceId": 0
+    "PlaceId": 0,
+    "Category": "RNG",
+    "Tags": [
+      "RNG",
+      "Luck",
+      "Farming",
+      "Automation",
+      "Collecting"
+    ]
   },
   {
     "Name": "Crab Tycoon 🦀",
@@ -573,7 +1010,14 @@
     "ImageAssetId": "rbxassetid://140695431502264",
     "TagType": "NONE",
     "LastUpdated": 1782489600,
-    "PlaceId": 0
+    "PlaceId": 0,
+    "Category": "Building",
+    "Tags": [
+      "Farming",
+      "Automation",
+      "Building",
+      "Animals"
+    ]
   },
   {
     "Name": "+1 Health For Brainrot!",
@@ -582,7 +1026,13 @@
     "ImageAssetId": "rbxassetid://74236780693637",
     "TagType": "NONE",
     "LastUpdated": 1782489600,
-    "PlaceId": 0
+    "PlaceId": 0,
+    "Category": "Simulator",
+    "Tags": [
+      "Brainrot",
+      "Farming",
+      "Automation"
+    ]
   },
   {
     "Name": "Chicken Farm 🐣",
@@ -591,7 +1041,17 @@
     "ImageAssetId": "rbxassetid://100059908177743",
     "TagType": "NONE",
     "LastUpdated": 1784886351,
-    "PlaceId": 0
+    "PlaceId": 0,
+    "Category": "Farming",
+    "Tags": [
+      "RNG",
+      "Luck",
+      "Farming",
+      "Automation",
+      "Building",
+      "Animals",
+      "Collecting"
+    ]
   },
   {
     "Name": "Paint My Keyboard! 🎨",
@@ -600,7 +1060,13 @@
     "ImageAssetId": "rbxassetid://113660752059484",
     "TagType": "NONE",
     "LastUpdated": 1782489600,
-    "PlaceId": 0
+    "PlaceId": 0,
+    "Category": "Painting",
+    "Tags": [
+      "Farming",
+      "Automation",
+      "Painting"
+    ]
   },
   {
     "Name": "[🎨] Paint And SEEK!",
@@ -609,7 +1075,13 @@
     "ImageAssetId": "rbxassetid://103324337457554",
     "TagType": "NONE",
     "LastUpdated": 1782489600,
-    "PlaceId": 0
+    "PlaceId": 0,
+    "Category": "Painting",
+    "Tags": [
+      "Farming",
+      "Automation",
+      "Painting"
+    ]
   },
   {
     "Name": "[🏝NEW] Clicker Simulator",
@@ -618,7 +1090,13 @@
     "ImageAssetId": "rbxassetid://70478021723927",
     "TagType": "NONE",
     "LastUpdated": 1783094400,
-    "PlaceId": 0
+    "PlaceId": 0,
+    "Category": "Clicker",
+    "Tags": [
+      "Farming",
+      "Automation",
+      "Clicker"
+    ]
   },
   {
     "Name": "Clean The Supermarket!",
@@ -627,7 +1105,12 @@
     "ImageAssetId": "rbxassetid://71106815058446",
     "TagType": "NONE",
     "LastUpdated": 1783094400,
-    "PlaceId": 0
+    "PlaceId": 0,
+    "Category": "Farming",
+    "Tags": [
+      "Farming",
+      "Automation"
+    ]
   },
   {
     "Name": "[UPD] +1 Run for NEEDOH!",
@@ -636,7 +1119,13 @@
     "ImageAssetId": "rbxassetid://108809198857178",
     "TagType": "NONE",
     "LastUpdated": 1783094400,
-    "PlaceId": 0
+    "PlaceId": 0,
+    "Category": "Simulator",
+    "Tags": [
+      "Farming",
+      "Automation",
+      "Collecting"
+    ]
   },
   {
     "Name": "[NEW!🔥] Paint Or Seek",
@@ -645,6 +1134,10 @@
     "ImageAssetId": "rbxassetid://106255753802990",
     "TagType": "NONE",
     "LastUpdated": 1783094400,
-    "PlaceId": 0
+    "PlaceId": 0,
+    "Category": "Painting",
+    "Tags": [
+      "Painting"
+    ]
   }
 ]
