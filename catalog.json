@@ -13,8 +13,8 @@
   "Description": "UNDETECTABLE Still in Beta. You may encounter some bugs while using the beta version, but don’t worry! I’ll continue updating and improving it every week, fixing bugs, improving stability, and working on better anti-cheat compatibility.",
   "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/Rivals",
   "ImageAssetId": "rbxassetid://113623358319230",
-  "TagType": "HOT",
-  "LastUpdated": 1789918798,
+  "TagType": "UPDATED",
+  "LastUpdated": 1789964862,
   "PlaceId": 17625359962
   },
   {
@@ -22,7 +22,7 @@
   "Description": "A Roblox script focused on stealing and hatching anime-themed items, with automated gameplay features.",
   "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/StealandHatchAnime",
   "ImageAssetId": "rbxassetid://103563302293588",
-  "TagType": "HOT",
+  "TagType": "NONE",
   "LastUpdated": 1789510239,
   "PlaceId": 76377501906469
   },
@@ -31,7 +31,7 @@
   "Description": "A Roblox script focused on swinging and collecting eggs, with automated gameplay features.",
   "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/SwingforEggs",
   "ImageAssetId": "rbxassetid://100464822711525",
-  "TagType": "HOT",
+  "TagType": "NONE",
   "LastUpdated": 1789510239,
   "PlaceId": 109203247742910
   },
@@ -40,7 +40,7 @@
   "Description": "A Roblox script for Steal an Egg for Squishy Dumplings, featuring gameplay automation and useful in-game features.",
   "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/StealanEggforSquishyDumplings",
   "ImageAssetId": "rbxassetid://104341666679181",
-  "TagType": "HOT",
+  "TagType": "NONE",
   "LastUpdated": 1789305682,
   "PlaceId": 134679507313109
   },
@@ -49,7 +49,7 @@
   "Description": "A Roblox script for Grow Beanstalk to Steal An Egg, providing helpful features and automation for the game.",
   "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/GrowBeanstalktoStealAnEgg",
   "ImageAssetId": "rbxassetid://97939390177713",
-  "TagType": "HOT",
+  "TagType": "NONE",
   "LastUpdated": 1789305682,
   "PlaceId": 87695656520229
   },
@@ -58,7 +58,7 @@
   "Description": "A Roblox script for Steal a Giant Egg, featuring useful gameplay features and automation.",
   "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/StealaGiantEgg",
   "ImageAssetId": "rbxassetid://73160996227994",
-  "TagType": "HOT",
+  "TagType": "NONE",
   "LastUpdated": 1789305682,
   "PlaceId": 136448020793455
   },
@@ -130,7 +130,7 @@
     "Description": "Roll the dice, discover anime-themed rewards, and test your luck with fun automation features. ✨",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/AnimeDice",
     "ImageAssetId": "rbxassetid://77485736580238",
-    "TagType": "UPDATED",
+    "TagType": "NONE",
     "LastUpdated": 1789549433,
     "PlaceId": 113290951185459
   },
@@ -256,7 +256,7 @@
     "Description": "Use gravity to your advantage and automate your farming while you sit back and relax.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/FallForBrainrots",
     "ImageAssetId": "rbxassetid://83344840395172",
-    "TagType": "UPDATED",
+    "TagType": "NONE",
     "LastUpdated": 1789549433,
     "PlaceId": 86368783421928
   },
