@@ -9,6 +9,15 @@
     "PlaceId": 0
   },
   {
+  "Name": "Murder Mystery 2",
+  "Description": "Roblox mystery game where players are assigned different roles and must survive, investigate, or stop the murderer. Collect coins, unlock and trade unique items, and test your skills across different maps.",
+  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/MMTWO",
+  "ImageAssetId": "rbxassetid://139595891026880",
+  "TagType": "HOT",
+  "LastUpdated": 1789985362,
+  "PlaceId": 142823291
+  },
+  {
   "Name": "Rivals",
   "Description": "UNDETECTABLE Still in Beta. You may encounter some bugs while using the beta version, but don’t worry! I’ll continue updating and improving it every week, fixing bugs, improving stability, and working on better anti-cheat compatibility.",
   "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/Rivals",
