@@ -15,6 +15,25 @@
     ]
   },
   {
+  "Name": "[NEW🎉] Race Horses",
+  "Description": "Build your stable, hatch unique horses, and race them to earn cash. Discover horses with random coats, traits, and rare variants, upgrade your stable, care for your horses, and keep earning even while offline.",
+  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/RaceHorses",
+  "ImageAssetId": "rbxassetid://116210518372841",
+  "TagType": "HOT",
+  "LastUpdated": 1790077325,
+  "PlaceId": 79475945127283,
+  "Category": "Simulation",
+  "Tags": [
+    "Simulation",
+    "Racing",
+    "Idle",
+    "RNG",
+    "Horses",
+    "Collecting",
+    "Upgrading"
+  ]
+  },
+  {
     "Name": "Murder Mystery 2",
     "Description": "Roblox mystery game where players are assigned different roles and must survive, investigate, or stop the murderer. Collect coins, unlock and trade unique items, and test your skills across different maps.",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/MMTWO",
