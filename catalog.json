@@ -15,6 +15,44 @@
     ]
   },
   {
+  "Name": "Defend Your Treehouse!",
+  "Description": "Defend your treehouse from enemies, upgrade your defenses, and survive waves of attacks. Build stronger defenses, unlock new abilities, and protect your base.",
+  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/DefendYourTreeHouse",
+  "ImageAssetId": "rbxassetid://72669076552767",
+  "TagType": "HOT",
+  "LastUpdated": 1790263853,
+  "PlaceId": 100641654440407,
+  "Category": "Tower Defense",
+  "Tags": [
+    "Tower Defense",
+    "Defense",
+    "Base Defense",
+    "Survival",
+    "Waves",
+    "Upgrading",
+    "Strategy"
+  ]
+},
+{
+  "Name": "[🌩UPD] Steal From The Rich",
+  "Description": "Steal valuable items, earn cash, and grow your wealth. Take on risky heists, upgrade your abilities, and become richer as you progress.",
+  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/StealFromTheRich",
+  "ImageAssetId": "rbxassetid://74888451565711",
+  "TagType": "HOT",
+  "LastUpdated": 1790263853,
+  "PlaceId": 120475074479690,
+  "Category": "Simulator",
+  "Tags": [
+    "Simulator",
+    "Stealing",
+    "Money",
+    "Robbery",
+    "Progression",
+    "Upgrading",
+    "Grinding"
+  ]
+  },
+  {
   "Name": "[NEW🎉] Race Horses",
   "Description": "Build your stable, hatch unique horses, and race them to earn cash. Discover horses with random coats, traits, and rare variants, upgrade your stable, care for your horses, and keep earning even while offline.",
   "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/RaceHorses",
