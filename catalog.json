@@ -15,6 +15,25 @@
     ]
   },
   {
+  "Name": "[⚽] Blue Lock Farm",
+  "Description": "Build your team, train your players, and farm resources to become the strongest striker. Upgrade your abilities, improve your stats, and progress through the Blue Lock experience.",
+  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/BlueLockFarm",
+  "ImageAssetId": "rbxassetid://113941420088033",
+  "TagType": "HOT",
+  "LastUpdated": 1790462807,
+  "PlaceId": 132767904294856,
+  "Category": "Sports",
+  "Tags": [
+    "Blue Lock",
+    "Football",
+    "Soccer",
+    "Sports",
+    "Training",
+    "Auto Farm",
+    "Progression"
+  ]
+  },
+  {
   "Name": "Defend Your Treehouse!",
   "Description": "Defend your treehouse from enemies, upgrade your defenses, and survive waves of attacks. Build stronger defenses, unlock new abilities, and protect your base.",
   "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/DefendYourTreeHouse",
