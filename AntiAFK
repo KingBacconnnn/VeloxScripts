@@ -1,0 +1,680 @@
+repeat
+	task.wait()
+until game:IsLoaded() and game:GetService("Players").LocalPlayer
+
+local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local Stats = game:GetService("Stats")
+local VirtualUser = game:GetService("VirtualUser")
+
+local LocalPlayer = Players.LocalPlayer
+local GENV = type(getgenv) == "function" and getgenv() or _G
+
+local GUI_NAME = "OveiAntiAFK"
+local PANEL_WIDTH = 330
+local EXPANDED_HEIGHT = 176
+local MINIMIZED_HEIGHT = 58
+
+if type(GENV.OveiAntiAFKCleanup) == "function" then
+	pcall(GENV.OveiAntiAFKCleanup)
+end
+
+GENV.OveiAntiAFKActive = false
+
+local GuiParent = CoreGui
+
+pcall(function()
+	if type(gethui) == "function" then
+		local hui = gethui()
+		if hui then
+			GuiParent = hui
+		end
+	end
+end)
+
+local ExistingGui = GuiParent:FindFirstChild(GUI_NAME)
+
+if ExistingGui then
+	ExistingGui:Destroy()
+end
+
+GENV.OveiAntiAFKActive = true
+
+local Connections = {}
+local CleaningUp = false
+local Minimized = false
+
+local function connect(signal, callback)
+	local connection = signal:Connect(callback)
+	Connections[#Connections + 1] = connection
+	return connection
+end
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = GUI_NAME
+ScreenGui.ResetOnSpawn = false
+ScreenGui.IgnoreGuiInset = true
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.DisplayOrder = 999999
+ScreenGui.Parent = GuiParent
+
+local function getViewport()
+	local camera = workspace.CurrentCamera
+
+	if camera then
+		local viewport = camera.ViewportSize
+
+		if viewport.X > 0 and viewport.Y > 0 then
+			return viewport
+		end
+	end
+
+	return Vector2.new(800, 600)
+end
+
+local function getStartPosition()
+	local viewport = getViewport()
+
+	return UDim2.fromOffset(
+		math.floor((viewport.X - PANEL_WIDTH) / 2),
+		math.floor(viewport.Y * 0.17)
+	)
+end
+
+local Root = Instance.new("Frame")
+Root.Name = "Root"
+Root.Position = getStartPosition()
+Root.Size = UDim2.fromOffset(PANEL_WIDTH, EXPANDED_HEIGHT)
+Root.BackgroundTransparency = 1
+Root.BorderSizePixel = 0
+Root.Parent = ScreenGui
+
+local Shadow = Instance.new("Frame")
+Shadow.Name = "Shadow"
+Shadow.Position = UDim2.fromOffset(0, 5)
+Shadow.Size = UDim2.new(1, 0, 1, -5)
+Shadow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+Shadow.BackgroundTransparency = 0.48
+Shadow.BorderSizePixel = 0
+Shadow.ZIndex = 1
+Shadow.Parent = Root
+
+local ShadowCorner = Instance.new("UICorner")
+ShadowCorner.CornerRadius = UDim.new(0, 21)
+ShadowCorner.Parent = Shadow
+
+local Main = Instance.new("Frame")
+Main.Name = "Main"
+Main.Position = UDim2.fromOffset(0, 0)
+Main.Size = UDim2.new(1, 0, 1, -5)
+Main.BackgroundColor3 = Color3.fromRGB(18, 21, 29)
+Main.BackgroundTransparency = 0.1
+Main.BorderSizePixel = 0
+Main.ZIndex = 2
+Main.Parent = Root
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 21)
+MainCorner.Parent = Main
+
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Color = Color3.fromRGB(255, 255, 255)
+MainStroke.Transparency = 0.84
+MainStroke.Thickness = 1
+MainStroke.Parent = Main
+
+local MainGradient = Instance.new("UIGradient")
+MainGradient.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(43, 47, 61)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(24, 27, 36)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 17, 23))
+})
+MainGradient.Rotation = 135
+MainGradient.Parent = Main
+
+local Header = Instance.new("Frame")
+Header.Name = "Header"
+Header.Position = UDim2.fromOffset(16, 9)
+Header.Size = UDim2.new(1, -32, 0, 40)
+Header.BackgroundTransparency = 1
+Header.ZIndex = 5
+Header.Parent = Main
+
+local DragArea = Instance.new("TextButton")
+DragArea.Name = "DragArea"
+DragArea.Position = UDim2.fromOffset(0, 0)
+DragArea.Size = UDim2.new(1, -82, 1, 0)
+DragArea.BackgroundTransparency = 1
+DragArea.BorderSizePixel = 0
+DragArea.Text = ""
+DragArea.AutoButtonColor = false
+DragArea.Active = true
+DragArea.ZIndex = 6
+DragArea.Parent = Header
+
+local StatusDot = Instance.new("Frame")
+StatusDot.Name = "StatusDot"
+StatusDot.Position = UDim2.fromOffset(1, 9)
+StatusDot.Size = UDim2.fromOffset(9, 9)
+StatusDot.BackgroundColor3 = Color3.fromRGB(72, 220, 120)
+StatusDot.BorderSizePixel = 0
+StatusDot.ZIndex = 7
+StatusDot.Parent = Header
+
+local StatusDotCorner = Instance.new("UICorner")
+StatusDotCorner.CornerRadius = UDim.new(1, 0)
+StatusDotCorner.Parent = StatusDot
+
+local Title = Instance.new("TextLabel")
+Title.Name = "Title"
+Title.Position = UDim2.fromOffset(20, 0)
+Title.Size = UDim2.fromOffset(170, 23)
+Title.BackgroundTransparency = 1
+Title.Font = Enum.Font.GothamBold
+Title.Text = "Anti AFK"
+Title.TextColor3 = Color3.fromRGB(245, 247, 255)
+Title.TextSize = 18
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.ZIndex = 7
+Title.Parent = Header
+
+local Author = Instance.new("TextLabel")
+Author.Name = "Author"
+Author.Position = UDim2.fromOffset(20, 21)
+Author.Size = UDim2.fromOffset(140, 14)
+Author.BackgroundTransparency = 1
+Author.Font = Enum.Font.GothamMedium
+Author.Text = "By Ovei"
+Author.TextColor3 = Color3.fromRGB(145, 151, 170)
+Author.TextSize = 10
+Author.TextXAlignment = Enum.TextXAlignment.Left
+Author.ZIndex = 7
+Author.Parent = Header
+
+local function createControlButton(name, text, offset, textSize)
+	local button = Instance.new("TextButton")
+	button.Name = name
+	button.AnchorPoint = Vector2.new(1, 0)
+	button.Position = UDim2.new(1, offset, 0, 0)
+	button.Size = UDim2.fromOffset(34, 34)
+	button.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	button.BackgroundTransparency = 0.925
+	button.BorderSizePixel = 0
+	button.AutoButtonColor = false
+	button.Font = Enum.Font.GothamBold
+	button.Text = text
+	button.TextColor3 = Color3.fromRGB(225, 228, 238)
+	button.TextSize = textSize
+	button.ZIndex = 10
+	button.Parent = Header
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(1, 0)
+	corner.Parent = button
+
+	return button
+end
+
+local MinimizeButton = createControlButton("MinimizeButton", "−", -39, 18)
+local CloseButton = createControlButton("DestroyButton", "×", 0, 20)
+
+local StatsContainer = Instance.new("Frame")
+StatsContainer.Name = "StatsContainer"
+StatsContainer.Position = UDim2.fromOffset(16, 61)
+StatsContainer.Size = UDim2.new(1, -32, 0, 58)
+StatsContainer.BackgroundTransparency = 1
+StatsContainer.ZIndex = 5
+StatsContainer.Parent = Main
+
+local StatsLayout = Instance.new("UIListLayout")
+StatsLayout.FillDirection = Enum.FillDirection.Horizontal
+StatsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+StatsLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+StatsLayout.Padding = UDim.new(0, 8)
+StatsLayout.Parent = StatsContainer
+
+local function createFullStat(name, width)
+	local card = Instance.new("Frame")
+	card.Name = name .. "Card"
+	card.Size = UDim2.fromOffset(width, 56)
+	card.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	card.BackgroundTransparency = 0.945
+	card.BorderSizePixel = 0
+	card.ZIndex = 5
+	card.Parent = StatsContainer
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 14)
+	corner.Parent = card
+
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = Color3.fromRGB(255, 255, 255)
+	stroke.Transparency = 0.92
+	stroke.Thickness = 1
+	stroke.Parent = card
+
+	local label = Instance.new("TextLabel")
+	label.Position = UDim2.fromOffset(8, 7)
+	label.Size = UDim2.new(1, -16, 0, 13)
+	label.BackgroundTransparency = 1
+	label.Font = Enum.Font.GothamMedium
+	label.Text = name
+	label.TextColor3 = Color3.fromRGB(145, 151, 170)
+	label.TextSize = 9
+	label.TextXAlignment = Enum.TextXAlignment.Center
+	label.ZIndex = 6
+	label.Parent = card
+
+	local value = Instance.new("TextLabel")
+	value.Position = UDim2.fromOffset(8, 21)
+	value.Size = UDim2.new(1, -16, 0, 25)
+	value.BackgroundTransparency = 1
+	value.Font = Enum.Font.GothamBold
+	value.Text = "--"
+	value.TextColor3 = Color3.fromRGB(239, 242, 250)
+	value.TextSize = 14
+	value.TextXAlignment = Enum.TextXAlignment.Center
+	value.ZIndex = 6
+	value.Parent = card
+
+	return value
+end
+
+local FPSLabel = createFullStat("FPS", 88)
+local PingLabel = createFullStat("PING", 88)
+local TimeLabel = createFullStat("SESSION", 104)
+
+local Footer = Instance.new("Frame")
+Footer.Name = "Footer"
+Footer.Position = UDim2.new(0, 16, 1, -35)
+Footer.Size = UDim2.new(1, -32, 0, 21)
+Footer.BackgroundTransparency = 1
+Footer.ZIndex = 5
+Footer.Parent = Main
+
+local StatusText = Instance.new("TextLabel")
+StatusText.Name = "StatusText"
+StatusText.Size = UDim2.new(1, -90, 1, 0)
+StatusText.BackgroundTransparency = 1
+StatusText.Font = Enum.Font.GothamMedium
+StatusText.Text = "Anti-AFK is active"
+StatusText.TextColor3 = Color3.fromRGB(157, 162, 179)
+StatusText.TextSize = 10
+StatusText.TextXAlignment = Enum.TextXAlignment.Left
+StatusText.ZIndex = 6
+StatusText.Parent = Footer
+
+local ActiveText = Instance.new("TextLabel")
+ActiveText.Name = "ActiveText"
+ActiveText.AnchorPoint = Vector2.new(1, 0)
+ActiveText.Position = UDim2.new(1, 0, 0, 0)
+ActiveText.Size = UDim2.fromOffset(80, 21)
+ActiveText.BackgroundTransparency = 1
+ActiveText.Font = Enum.Font.GothamBold
+ActiveText.Text = "● ACTIVE"
+ActiveText.TextColor3 = Color3.fromRGB(72, 220, 120)
+ActiveText.TextSize = 10
+ActiveText.TextXAlignment = Enum.TextXAlignment.Right
+ActiveText.ZIndex = 6
+ActiveText.Parent = Footer
+
+local MiniIndicator = Instance.new("Frame")
+MiniIndicator.Name = "MiniIndicator"
+MiniIndicator.Position = UDim2.fromOffset(3, 5)
+MiniIndicator.Size = UDim2.fromOffset(6, 30)
+MiniIndicator.BackgroundColor3 = Color3.fromRGB(72, 220, 120)
+MiniIndicator.BorderSizePixel = 0
+MiniIndicator.ZIndex = 8
+MiniIndicator.Visible = false
+MiniIndicator.Parent = Header
+
+local MiniIndicatorCorner = Instance.new("UICorner")
+MiniIndicatorCorner.CornerRadius = UDim.new(1, 0)
+MiniIndicatorCorner.Parent = MiniIndicator
+
+local function createMiniStat(name, text, position, width)
+	local holder = Instance.new("Frame")
+	holder.Name = name
+	holder.Position = UDim2.fromOffset(position, 5)
+	holder.Size = UDim2.fromOffset(width, 30)
+	holder.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	holder.BackgroundTransparency = 0.945
+	holder.BorderSizePixel = 0
+	holder.ZIndex = 8
+	holder.Visible = false
+	holder.Parent = Header
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 9)
+	corner.Parent = holder
+
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = Color3.fromRGB(255, 255, 255)
+	stroke.Transparency = 0.93
+	stroke.Thickness = 1
+	stroke.Parent = holder
+
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(1, -4, 1, 0)
+	label.Position = UDim2.fromOffset(2, 0)
+	label.BackgroundTransparency = 1
+	label.Font = Enum.Font.GothamBold
+	label.Text = text
+	label.TextColor3 = Color3.fromRGB(232, 235, 244)
+	label.TextSize = 9
+	label.TextXAlignment = Enum.TextXAlignment.Center
+	label.TextTruncate = Enum.TextTruncate.AtEnd
+	label.ZIndex = 9
+	label.Parent = holder
+
+	return holder, label
+end
+
+local MiniFPS, MiniFPSText = createMiniStat(
+	"MiniFPS",
+	"FPS --",
+	16,
+	56
+)
+
+local MiniPing, MiniPingText = createMiniStat(
+	"MiniPing",
+	"PING --",
+	79,
+	62
+)
+
+local MiniTime, MiniTimeText = createMiniStat(
+	"MiniTime",
+	"00:00:00",
+	148,
+	70
+)
+
+local dragging = false
+local dragStart
+local dragStartX = 0
+local dragStartY = 0
+local dragInput
+
+connect(DragArea.InputBegan, function(input)
+	if input.UserInputType ~= Enum.UserInputType.MouseButton1
+		and input.UserInputType ~= Enum.UserInputType.Touch then
+		return
+	end
+
+	dragging = true
+	dragInput = input
+	dragStart = input.Position
+
+	local position = Root.Position
+	dragStartX = position.X.Offset
+	dragStartY = position.Y.Offset
+end)
+
+connect(UserInputService.InputChanged, function(input)
+	if not dragging then
+		return
+	end
+
+	if dragInput.UserInputType == Enum.UserInputType.Touch then
+		if input ~= dragInput then
+			return
+		end
+	elseif input.UserInputType ~= Enum.UserInputType.MouseMovement then
+		return
+	end
+
+	local delta = input.Position - dragStart
+
+	Root.Position = UDim2.fromOffset(
+		dragStartX + delta.X,
+		dragStartY + delta.Y
+	)
+end)
+
+connect(UserInputService.InputEnded, function(input)
+	if input == dragInput then
+		dragging = false
+		dragInput = nil
+	end
+end)
+
+local function setMinimized(state)
+	if CleaningUp then
+		return
+	end
+
+	Minimized = state
+
+	Title.Visible = not state
+	Author.Visible = not state
+	StatusDot.Visible = not state
+
+	StatsContainer.Visible = not state
+	Footer.Visible = not state
+
+	MiniIndicator.Visible = state
+	MiniFPS.Visible = state
+	MiniPing.Visible = state
+	MiniTime.Visible = state
+
+	MinimizeButton.Text = state and "+" or "−"
+
+	TweenService:Create(
+		Root,
+		TweenInfo.new(
+			0.26,
+			Enum.EasingStyle.Quint,
+			Enum.EasingDirection.Out
+		),
+		{
+			Size = UDim2.fromOffset(
+				PANEL_WIDTH,
+				state and MINIMIZED_HEIGHT or EXPANDED_HEIGHT
+			)
+		}
+	):Play()
+end
+
+connect(MinimizeButton.Activated, function()
+	setMinimized(not Minimized)
+end)
+
+local SessionStart = os.clock()
+local FrameCount = 0
+local FPSElapsed = 0
+local UIElapsed = 0
+local PulseTime = 0
+
+local function formatTime(seconds)
+	seconds = math.max(0, math.floor(seconds))
+
+	local hours = math.floor(seconds / 3600)
+	local minutes = math.floor((seconds % 3600) / 60)
+	local secs = seconds % 60
+
+	return string.format("%02d:%02d:%02d", hours, minutes, secs)
+end
+
+local function getPing()
+	local ping
+
+	pcall(function()
+		local network = Stats:FindFirstChild("Network")
+		local serverStats = network and network:FindFirstChild("ServerStatsItem")
+		local dataPing = serverStats and serverStats:FindFirstChild("Data Ping")
+
+		if dataPing then
+			ping = dataPing:GetValue()
+		end
+	end)
+
+	if typeof(ping) ~= "number" then
+		pcall(function()
+			local performanceStats = Stats:FindFirstChild("PerformanceStats")
+			local pingObject = performanceStats and performanceStats:FindFirstChild("Ping")
+
+			if pingObject then
+				ping = pingObject:GetValue()
+			end
+		end)
+	end
+
+	return typeof(ping) == "number" and math.floor(ping) or nil
+end
+
+connect(LocalPlayer.Idled, function()
+	if not GENV.OveiAntiAFKActive or CleaningUp then
+		return
+	end
+
+	pcall(function()
+		VirtualUser:CaptureController()
+		VirtualUser:ClickButton2(Vector2.new())
+	end)
+end)
+
+connect(RunService.RenderStepped, function(deltaTime)
+	if not GENV.OveiAntiAFKActive or CleaningUp then
+		return
+	end
+
+	PulseTime += deltaTime * 2
+
+	local transparency =
+		0.08 + ((math.sin(PulseTime) + 1) * 0.08)
+
+	StatusDot.BackgroundTransparency = transparency
+	MiniIndicator.BackgroundTransparency = transparency
+end)
+
+connect(RunService.Heartbeat, function(deltaTime)
+	if not GENV.OveiAntiAFKActive or CleaningUp then
+		return
+	end
+
+	FrameCount += 1
+	FPSElapsed += deltaTime
+	UIElapsed += deltaTime
+
+	if FPSElapsed >= 1 then
+		local fps = math.floor((FrameCount / FPSElapsed) + 0.5)
+		local fpsText = tostring(fps)
+
+		FPSLabel.Text = fpsText
+		MiniFPSText.Text = "FPS " .. fpsText
+
+		local ping = getPing()
+
+		if ping then
+			PingLabel.Text = tostring(ping) .. " ms"
+			MiniPingText.Text = "PING " .. tostring(ping)
+		else
+			PingLabel.Text = "--"
+			MiniPingText.Text = "PING --"
+		end
+
+		FrameCount = 0
+		FPSElapsed = 0
+	end
+
+	if UIElapsed >= 0.25 then
+		local sessionText = formatTime(os.clock() - SessionStart)
+
+		TimeLabel.Text = sessionText
+		MiniTimeText.Text = sessionText
+
+		UIElapsed = 0
+	end
+end)
+
+local function cleanup()
+	if CleaningUp then
+		return
+	end
+
+	CleaningUp = true
+	GENV.OveiAntiAFKActive = false
+
+	if GENV.OveiAntiAFKCleanup == cleanup then
+		GENV.OveiAntiAFKCleanup = nil
+	end
+
+	dragging = false
+	dragInput = nil
+
+	for i = #Connections, 1, -1 do
+		pcall(function()
+			Connections[i]:Disconnect()
+		end)
+
+		Connections[i] = nil
+	end
+
+	pcall(function()
+		ScreenGui:Destroy()
+	end)
+end
+
+GENV.OveiAntiAFKCleanup = cleanup
+
+connect(CloseButton.Activated, cleanup)
+
+connect(ScreenGui.AncestryChanged, function(_, parent)
+	if not parent and not CleaningUp then
+		cleanup()
+	end
+end)
+
+local originalPosition = Root.Position
+
+Root.Position = UDim2.fromOffset(
+	originalPosition.X.Offset,
+	originalPosition.Y.Offset - 10
+)
+
+Main.BackgroundTransparency = 1
+Shadow.BackgroundTransparency = 1
+
+TweenService:Create(
+	Root,
+	TweenInfo.new(
+		0.35,
+		Enum.EasingStyle.Quint,
+		Enum.EasingDirection.Out
+	),
+	{
+		Position = UDim2.fromOffset(
+			originalPosition.X.Offset,
+			originalPosition.Y.Offset
+		)
+	}
+):Play()
+
+TweenService:Create(
+	Main,
+	TweenInfo.new(
+		0.35,
+		Enum.EasingStyle.Quint,
+		Enum.EasingDirection.Out
+	),
+	{
+		BackgroundTransparency = 0.1
+	}
+):Play()
+
+TweenService:Create(
+	Shadow,
+	TweenInfo.new(
+		0.35,
+		Enum.EasingStyle.Quint,
+		Enum.EasingDirection.Out
+	),
+	{
+		BackgroundTransparency = 0.48
+	}
+):Play()
