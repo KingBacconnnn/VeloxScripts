@@ -1,4 +1,5 @@
 {
+ [
   "Name": "Anti AFK",
   "Description": "Modern glassmorphism Anti-AFK utility with automatic idle prevention, live FPS and ping monitoring, session timer, draggable UI, minimize mode, and mobile-friendly controls. By Ovei.",
   "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/AntiAFK",
@@ -13,5 +14,6 @@
     "FPS",
     "Ping",
     "Mobile"
+   ]
   ]
 }
