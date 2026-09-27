@@ -1,19 +1,19 @@
-{
- [
-  "Name": "Anti AFK",
-  "Description": "Modern glassmorphism Anti-AFK utility with automatic idle prevention, live FPS and ping monitoring, session timer, draggable UI, minimize mode, and mobile-friendly controls. By Ovei.",
-  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/AntiAFK",
-  "ImageAssetId": "rbxassetid://88299949043864",
-  "TagType": "UPDATED",
-  "LastUpdated": 1790519403,
-  "PlaceId": 0,
-  "Category": "Utilities",
-  "Tags": [
-    "Anti AFK",
-    "Utility",
-    "FPS",
-    "Ping",
-    "Mobile",
-   ]
-}
- ]
+[
+  {
+    "Name": "Anti AFK",
+    "Description": "Modern glassmorphism Anti-AFK utility with automatic idle prevention, live FPS and ping monitoring, session timer, draggable UI, minimize mode, and mobile-friendly controls. By Ovei.",
+    "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/AntiAFK",
+    "ImageAssetId": "rbxassetid://88299949043864",
+    "TagType": "UPDATED",
+    "LastUpdated": 1790519403,
+    "PlaceId": 0,
+    "Category": "Utilities",
+    "Tags": [
+      "Anti AFK",
+      "Utility",
+      "FPS",
+      "Ping",
+      "Mobile"
+    ]
+  }
+]
