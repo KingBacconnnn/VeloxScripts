@@ -6,6 +6,33 @@
     "ImageAssetId": "rbxassetid://88299949043864",
     "TagType": "UPDATED",
     "LastUpdated": 1790519403,
-    "PlaceId": 0,
+    "PlaceId": 0
+  },
+  {
+    "Name": "Test Utility 2",
+    "Description": "Test entry for checking Utilities catalog loading and refresh.",
+    "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/AntiAFK",
+    "ImageAssetId": "rbxassetid://88299949043864",
+    "TagType": "NEW",
+    "LastUpdated": 1790519403,
+    "PlaceId": 0
+  },
+  {
+    "Name": "Test Utility 3",
+    "Description": "Second test entry for checking catalog updates.",
+    "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/AntiAFK",
+    "ImageAssetId": "rbxassetid://88299949043864",
+    "TagType": "HOT",
+    "LastUpdated": 1790519403,
+    "PlaceId": 0
+  },
+  {
+    "Name": "Test Utility 4",
+    "Description": "Third test entry for checking Utilities refresh behavior.",
+    "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/AntiAFK",
+    "ImageAssetId": "rbxassetid://88299949043864",
+    "TagType": "FEATURED",
+    "LastUpdated": 1790519403,
+    "PlaceId": 0
   }
 ]
