@@ -7,51 +7,5 @@
     "TagType": "UPDATED",
     "LastUpdated": 1790519403,
     "PlaceId": 0,
-    "Category": "Utilities",
-    "Tags": ["Anti AFK", "Utility"]
-  },
-  {
-    "Name": "Test Utility 2",
-    "Description": "Test utility for catalog loading.",
-    "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/TestUtility2",
-    "ImageAssetId": "rbxassetid://88299949043864",
-    "TagType": "HOT",
-    "LastUpdated": 1790519403,
-    "PlaceId": 0,
-    "Category": "Utilities",
-    "Tags": ["Test", "Utility"]
-  },
-  {
-    "Name": "Test Utility 3",
-    "Description": "Another utility used for testing the catalog.",
-    "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/TestUtility3",
-    "ImageAssetId": "rbxassetid://88299949043864",
-    "TagType": "NONE",
-    "LastUpdated": 1790519403,
-    "PlaceId": 0,
-    "Category": "Utilities",
-    "Tags": ["Test"]
-  },
-  {
-    "Name": "FPS Monitor",
-    "Description": "Displays FPS information for testing.",
-    "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/FPSMonitor",
-    "ImageAssetId": "rbxassetid://88299949043864",
-    "TagType": "UPDATED",
-    "LastUpdated": 1790519403,
-    "PlaceId": 0,
-    "Category": "Utilities",
-    "Tags": ["FPS", "Monitor"]
-  },
-  {
-    "Name": "Ping Monitor",
-    "Description": "Displays network ping information for testing.",
-    "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/PingMonitor",
-    "ImageAssetId": "rbxassetid://88299949043864",
-    "TagType": "HOT",
-    "LastUpdated": 1790519403,
-    "PlaceId": 0,
-    "Category": "Utilities",
-    "Tags": ["Ping", "Network"]
   }
 ]
