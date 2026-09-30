@@ -15,6 +15,60 @@
     ]
   },
   {
+  "Name": "Survive Lava for Animals",
+  "Description": "Train your speed and jump power, collect eggs, survive the rising lava, hatch rare animals, and earn money even while offline.",
+  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/SurviveLavaforAnimals",
+  "ImageAssetId": "rbxassetid://108312759269531",
+  "TagType": "HOT",
+  "LastUpdated": "1790767453",
+  "PlaceId": 127082754898219,
+  "Category": "Simulation",
+  "Tags": [
+    "Animals",
+    "Simulator",
+    "Pets",
+    "Eggs",
+    "Survival",
+    "Collecting"
+  ]
+},
+{
+  "Name": "Motorcycle for Animals",
+  "Description": "Ride and upgrade your motorcycle, explore new areas, rescue and collect animals, hatch eggs, and earn cash from your collection.",
+  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/MotorcycleforAnimals",
+  "ImageAssetId": "rbxassetid://89907501790584",
+  "TagType": "HOT",
+  "LastUpdated": "1790767453",
+  "PlaceId": 84403204002907,
+  "Category": "Simulation",
+  "Tags": [
+    "Animals",
+    "Motorcycle",
+    "Simulator",
+    "Pets",
+    "Eggs",
+    "Collecting"
+  ]
+},
+{
+  "Name": "Backflip for Animals!",
+  "Description": "Train your backflip power, reach new biomes, collect eggs, hatch rare animals, and upgrade your treadmill and base.",
+  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/BackflipforAnimals",
+  "ImageAssetId": "rbxassetid://108988063568733",
+  "TagType": "HOT",
+  "LastUpdated": "1790767453",
+  "PlaceId": 88611017452341,
+  "Category": "Simulation",
+  "Tags": [
+    "Animals",
+    "Simulator",
+    "Pets",
+    "Eggs",
+    "Backflip",
+    "Collecting"
+  ]
+  }, 
+  {
   "Name": "[⚽] Blue Lock Farm",
   "Description": "Build your team, train your players, and farm resources to become the strongest striker. Upgrade your abilities, improve your stats, and progress through the Blue Lock experience.",
   "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/BlueLockFarm",
