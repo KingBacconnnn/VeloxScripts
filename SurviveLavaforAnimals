@@ -1,0 +1,478 @@
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local LocalPlayer = Players.LocalPlayer
+
+local HomePosition = Vector3.new(103, 19, 327)
+
+local hatchEnabled = false
+local hatchInterval = 1
+
+local trampolineEnabled = false
+local penEnabled = false
+local upgradeInterval = 2
+
+local buyEnabled = false
+local equipEnabled = false
+local buyInterval = 2
+local equipInterval = 3
+
+local stealEnabled = false
+local stealCooldown = 0.2
+
+local function getMyPlotId()
+    local plot = LocalPlayer:GetAttribute("Plot")
+    if type(plot) == "number" then return plot end
+    return nil
+end
+
+local function getMyPlotFolder()
+    local required = workspace:FindFirstChild("REQUIRED")
+    if not required then return nil end
+    local instances = required:FindFirstChild("Instances")
+    if not instances then return nil end
+    local plots = instances:FindFirstChild("Plots")
+    if not plots then return nil end
+    local id = getMyPlotId()
+    if not id then return nil end
+    return plots:FindFirstChild(tostring(id))
+end
+
+local function findReadyPrompts()
+    local list = {}
+    local plot = getMyPlotFolder()
+    if not plot then return list end
+
+    for _, prompt in ipairs(plot:GetDescendants()) do
+        if prompt:IsA("ProximityPrompt") and prompt.ActionText == "Hatch" and prompt.Enabled then
+            table.insert(list, prompt)
+        end
+    end
+    return list
+end
+
+local function hatchPrompt(prompt)
+    if not prompt or not prompt.Parent then return end
+    pcall(function()
+        fireproximityprompt(prompt)
+    end)
+end
+
+local UpgradeRemote = ReplicatedStorage.Packages._Index["leifstout_networker@0.3.1"].networker._remotes:WaitForChild("UpgradeService", 15)
+if UpgradeRemote then
+    UpgradeRemote = UpgradeRemote:FindFirstChild("RemoteEvent")
+end
+
+local DataService = require(ReplicatedStorage.Packages.DataService).client
+
+local Configs = nil
+pcall(function()
+    Configs = require(ReplicatedStorage.Shared.Modules.Core.Configs)
+end)
+
+local function getMoney()
+    local ok, money = pcall(function()
+        return DataService:get({ "money" })
+    end)
+    if ok and type(money) == "number" then return money end
+    return 0
+end
+
+local function getLevel(upgradeType)
+    local ok, data = pcall(function()
+        return DataService:get({ "upgrades" })
+    end)
+    if not ok or type(data) ~= "table" then return 0 end
+    local level = data[upgradeType]
+    if type(level) == "number" then return level end
+    return 0
+end
+
+local function getCost(upgradeType, level)
+    if not Configs then return nil end
+    if upgradeType == "training" then
+        local cfg = Configs.TRAINING_UPGRADE
+        if cfg and cfg.Costs then
+            return cfg.Costs[level + 1]
+        end
+    elseif upgradeType == "pen" then
+        local cfg = Configs.PEN_UPGRADE
+        if cfg and cfg.Costs then
+            return cfg.Costs[level + 1]
+        end
+    end
+    return nil
+end
+
+local function canUpgrade(upgradeType)
+    local level = getLevel(upgradeType)
+    local cost = getCost(upgradeType, level)
+    if cost == nil then return true end
+    return getMoney() >= cost
+end
+
+local function fireUpgrade(upgradeType)
+    pcall(function()
+        UpgradeRemote:FireServer("tryUpgrade", upgradeType)
+    end)
+end
+
+local TrailData = require(ReplicatedStorage.Shared.Modules.Game.TrailData)
+
+local ShopRemote = ReplicatedStorage.Packages._Index["leifstout_networker@0.3.1"].networker._remotes:WaitForChild("ShopService", 15)
+if ShopRemote then
+    ShopRemote = ShopRemote:FindFirstChild("RemoteEvent")
+end
+
+local lastBuy = 0
+local lastEquip = 0
+
+local function getOwned()
+    local ok, owned = pcall(function()
+        return DataService:get({ "trails" }) or {}
+    end)
+    if not ok or type(owned) ~= "table" then return {} end
+    return owned
+end
+
+local function getEquipped()
+    local ok, eq = pcall(function()
+        return DataService:get({ "trail" })
+    end)
+    if not ok then return nil end
+    return eq
+end
+
+local function getCash()
+    local ok, cash = pcall(function()
+        return DataService:get({ "money" })
+    end)
+    if ok and type(cash) == "number" then return cash end
+    return 0
+end
+
+local function getTrailCost(id)
+    local entry = TrailData[id]
+    if entry and type(entry.cost) == "number" then return entry.cost end
+    return math.huge
+end
+
+local function getSpeed(id)
+    local entry = TrailData[id]
+    if entry and type(entry.speed) == "number" then return entry.speed end
+    return 0
+end
+
+local function getNextAffordable()
+    local owned = getOwned()
+    local cash = getCash()
+    local best, bestCost
+    for id = 1, #TrailData do
+        if not owned[id] then
+            local cost = getTrailCost(id)
+            if cost <= cash then
+                if not bestCost or cost < bestCost then
+                    best = id
+                    bestCost = cost
+                end
+            end
+        end
+    end
+    return best
+end
+
+local function getBestOwned()
+    local owned = getOwned()
+    local best, bestSpeed = nil, -1
+    for id = 1, #TrailData do
+        if owned[id] then
+            local speed = getSpeed(id)
+            if speed > bestSpeed then
+                bestSpeed = speed
+                best = id
+            end
+        end
+    end
+    return best
+end
+
+local function getRoot()
+    local char = LocalPlayer.Character
+    if not char then return nil end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not hum or hum.Health <= 0 then return nil end
+    return char:FindFirstChild("HumanoidRootPart")
+end
+
+local function teleportTo(pos)
+    local root = getRoot()
+    if not root then return end
+    pcall(function()
+        root.AssemblyLinearVelocity = Vector3.zero
+        root.AssemblyAngularVelocity = Vector3.zero
+        root.CFrame = CFrame.new(pos + Vector3.new(0, 3, 0))
+    end)
+end
+
+local function findEggs()
+    local list = {}
+    local field = workspace:FindFirstChild("EggField")
+    if not field then return list end
+
+    for _, obj in ipairs(field:GetChildren()) do
+        local hitbox = obj:FindFirstChild("Hitbox")
+        local prompt = hitbox and hitbox:FindFirstChild("ProximityPrompt")
+        if prompt and prompt:IsA("ProximityPrompt") then
+            local rootPart = obj:FindFirstChild("Root") or obj.PrimaryPart
+            if rootPart and rootPart:IsA("BasePart") then
+                table.insert(list, {
+                    model = obj,
+                    prompt = prompt,
+                    pos = rootPart.Position,
+                })
+            end
+        end
+    end
+    return list
+end
+
+local function stealEgg(entry)
+    if not entry.model.Parent then return false end
+    if not entry.prompt.Parent then return false end
+
+    teleportTo(entry.pos)
+    task.wait(0.15)
+
+    if not entry.prompt.Parent then return false end
+
+    pcall(function()
+        entry.prompt.Enabled = true
+    end)
+
+    pcall(function()
+        fireproximityprompt(entry.prompt)
+    end)
+
+    task.wait(0.15)
+    return true
+end
+
+local Window = WindUI:CreateWindow({
+    Title = "Survive Lava for Animals",
+    Icon = "flame",
+    Author = "by Ovei",
+    Folder = "SurviveLava",
+    Size = UDim2.fromOffset(420, 320),
+    Transparent = true,
+    Theme = "Dark",
+    ToggleKey = Enum.KeyCode.RightShift,
+})
+
+local EggsTab = Window:Tab({ Title = "Eggs", Icon = "egg" })
+
+EggsTab:Slider({
+    Title = "Hatch Interval",
+    Desc = "Set how often the hub checks for ready Eggs.",
+    Step = 0.1,
+    Value = { Min = 0.1, Max = 5, Default = 1 },
+    Callback = function(v) hatchInterval = v end,
+})
+
+EggsTab:Toggle({
+    Title = "Auto Hatch Egg",
+    Desc = "Automatically hatches every ready Egg on your Plot.",
+    Icon = "zap",
+    Type = "Checkbox",
+    Value = false,
+    Callback = function(state)
+        hatchEnabled = state
+        if not state then return end
+        task.spawn(function()
+            while hatchEnabled do
+                local prompts = findReadyPrompts()
+                for _, prompt in ipairs(prompts) do
+                    if not hatchEnabled then break end
+                    hatchPrompt(prompt)
+                    task.wait(0.1)
+                end
+                task.wait(hatchInterval)
+            end
+        end)
+    end,
+})
+
+EggsTab:Divider()
+
+EggsTab:Toggle({
+    Title = "Auto Steal Egg",
+    Desc = "Automatically collects Eggs and returns home after each collection.",
+    Icon = "zap",
+    Type = "Checkbox",
+    Value = false,
+    Callback = function(state)
+        stealEnabled = state
+        if not state then
+            teleportTo(HomePosition)
+            return
+        end
+        task.spawn(function()
+            while stealEnabled do
+                local eggs = findEggs()
+                if #eggs == 0 then
+                    task.wait(0.3)
+                else
+                    local entry = eggs[1]
+                    if entry.model.Parent and entry.prompt.Parent then
+                        local ok = stealEgg(entry)
+                        if ok then
+                            teleportTo(HomePosition)
+                            task.wait(stealCooldown)
+                        end
+                    end
+                end
+            end
+            teleportTo(HomePosition)
+        end)
+    end,
+})
+
+local UpgradeTab = Window:Tab({ Title = "Upgrade", Icon = "trending-up" })
+
+if not UpgradeRemote then
+    UpgradeTab:Paragraph({
+        Title = "Unavailable",
+        Desc = "Upgrade service is currently unavailable.",
+        Icon = "x",
+    })
+else
+    UpgradeTab:Slider({
+        Title = "Interval",
+        Desc = "Set how often the hub checks for available upgrades.",
+        Step = 0.5,
+        Value = { Min = 0.5, Max = 10, Default = 2 },
+        Callback = function(v) upgradeInterval = v end,
+    })
+
+    UpgradeTab:Divider()
+
+    UpgradeTab:Toggle({
+        Title = "Auto Upgrade Trampoline",
+        Desc = "Automatically upgrades your Trampoline whenever you can afford the next upgrade.",
+        Icon = "trending-up",
+        Type = "Checkbox",
+        Value = false,
+        Callback = function(state)
+            trampolineEnabled = state
+            if not state then return end
+            task.spawn(function()
+                while trampolineEnabled do
+                    if canUpgrade("training") then
+                        fireUpgrade("training")
+                    end
+                    task.wait(upgradeInterval)
+                end
+            end)
+        end,
+    })
+
+    UpgradeTab:Toggle({
+        Title = "Auto Upgrade Pen",
+        Desc = "Automatically upgrades your Pen whenever you can afford the next upgrade.",
+        Icon = "layout",
+        Type = "Checkbox",
+        Value = false,
+        Callback = function(state)
+            penEnabled = state
+            if not state then return end
+            task.spawn(function()
+                while penEnabled do
+                    if canUpgrade("pen") then
+                        fireUpgrade("pen")
+                    end
+                    task.wait(upgradeInterval)
+                end
+            end)
+        end,
+    })
+end
+
+local TrailTab = Window:Tab({ Title = "Trail", Icon = "wind" })
+
+if not ShopRemote then
+    TrailTab:Paragraph({
+        Title = "Unavailable",
+        Desc = "Shop service is currently unavailable.",
+        Icon = "x",
+    })
+else
+    TrailTab:Slider({
+        Title = "Buy Interval",
+        Desc = "Set how often the hub checks for affordable Trails.",
+        Step = 0.5,
+        Value = { Min = 1, Max = 10, Default = 2 },
+        Callback = function(v) buyInterval = v end,
+    })
+
+    TrailTab:Slider({
+        Title = "Equip Interval",
+        Desc = "Set how often the hub checks for a better Trail.",
+        Step = 0.5,
+        Value = { Min = 1, Max = 10, Default = 3 },
+        Callback = function(v) equipInterval = v end,
+    })
+
+    TrailTab:Divider()
+
+    TrailTab:Toggle({
+        Title = "Auto Buy Trail",
+        Desc = "Automatically buys the cheapest Trail you can afford.",
+        Icon = "shopping-cart",
+        Type = "Checkbox",
+        Value = false,
+        Callback = function(state)
+            buyEnabled = state
+            if not state then return end
+            task.spawn(function()
+                while buyEnabled do
+                    if os.clock() - lastBuy >= buyInterval then
+                        local id = getNextAffordable()
+                        if id then
+                            lastBuy = os.clock()
+                            pcall(function()
+                                ShopRemote:FireServer("tryBuy", "trail", id)
+                            end)
+                        end
+                    end
+                    task.wait(0.3)
+                end
+            end)
+        end,
+    })
+
+    TrailTab:Toggle({
+        Title = "Auto Equip Best Trail",
+        Desc = "Automatically equips your owned Trail with the highest Speed.",
+        Icon = "star",
+        Type = "Checkbox",
+        Value = false,
+        Callback = function(state)
+            equipEnabled = state
+            if not state then return end
+            task.spawn(function()
+                while equipEnabled do
+                    if os.clock() - lastEquip >= equipInterval then
+                        local best = getBestOwned()
+                        if best and getEquipped() ~= best then
+                            lastEquip = os.clock()
+                            pcall(function()
+                                ShopRemote:FireServer("equip", "trail", best)
+                            end)
+                        end
+                    end
+                    task.wait(0.3)
+                end
+            end)
+        end,
+    })
+end
