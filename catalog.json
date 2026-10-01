@@ -371,12 +371,12 @@
     ]
   },
   {
-    "Name": "[🎉UPD 4] Anime Dice",
+    "Name": "[⚙️UPD 6] Anime Dice",
     "Description": "Roll the dice, discover anime-themed rewards, and test your luck with fun automation features. ✨",
     "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/AnimeDice",
     "ImageAssetId": "rbxassetid://77485736580238",
-    "TagType": "NONE",
-    "LastUpdated": 1789549433,
+    "TagType": "UPDATED",
+    "LastUpdated": 1790863378,
     "PlaceId": 113290951185459,
     "Category": "Anime",
     "Tags": [
