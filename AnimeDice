@@ -523,8 +523,8 @@ local function adaptTab(rawTab)
 end
 
 local rawWindow = WindUI:CreateWindow({
-    Title = "[⚙️UPD 6] Anime",
-    Author = "by Over",
+    Title = "[⚙️UPD 6] Anime Dice",
+    Author = "by Ovei",
     Icon = "dices",
     Theme = "Dark",
     Resizable = true,
