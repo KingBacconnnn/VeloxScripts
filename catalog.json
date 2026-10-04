@@ -15,6 +15,24 @@
     ]
   },
   {
+  "Name": "Huss Valley",
+  "Description": "Still on Beta some features dont work, or little bit buggy, but overall it works, i want to also add more features but i dont have remaining time to add it, but i will try to add more features as soon as possible if i have time thank you for using this.",
+  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/HussValley",
+  "ImageAssetId": "rbxassetid://108445169964732",
+  "TagType": "HOT",
+  "LastUpdated": "1791120421",
+  "PlaceId": 107535308163741,
+  "Category": "Survival",
+  "Tags": [
+    "Survival",
+    "Running",
+    "Escape",
+    "Tag",
+    "Multiplayer",
+    "Movement"
+  ]
+  },
+  {
   "Name": "Survive Lava for Animals",
   "Description": "Train your speed and jump power, collect eggs, survive the rising lava, hatch rare animals, and earn money even while offline.",
   "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/SurviveLavaforAnimals",
