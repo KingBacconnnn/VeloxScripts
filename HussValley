@@ -1,13 +1,17 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local HttpService = game:GetService("HttpService")
 
 local LocalPlayer = Players.LocalPlayer
 local COH = ReplicatedStorage:WaitForChild("ChickenOrHero")
 local Movement = COH:WaitForChild("Movement")
 local MovementProfiles = require(Movement:WaitForChild("MovementProfiles"))
+local BoostInput = require(Movement:WaitForChild("BoostInput"))
 local Game = COH:WaitForChild("Game")
 local Session = Game:WaitForChild("Session")
+local MapVoteState = Game:WaitForChild("MapVoteState")
+local MapVoteEvent = Game:WaitForChild("MapVoteEvent")
 local ContactCatchConfig = require(Game:WaitForChild("ContactCatchConfig"))
 local TacklePrediction = require(Game:WaitForChild("TacklePrediction"))
 local MeleeEvent = Game:WaitForChild("MeleeEvent")
@@ -18,15 +22,20 @@ local RESCUE_FINISH_GRACE = math.max(0.1, tonumber(RescueConfig.FinishGrace) or 
 local RescueEvent = Game:WaitForChild("RescueEvent")
 local Gear = COH:WaitForChild("Gear")
 local GearCatalog = require(Gear:WaitForChild("GearCatalog"))
-local GearPredictionClient = require(Gear:WaitForChild("GearPredictionClient"))
 local ArmoryEvent = COH:WaitForChild("Weapons"):WaitForChild("ArmoryEvent")
+local SpinWheelEvent = COH:WaitForChild("SpinWheelEvent")
+local JourneyConfig = require(COH:WaitForChild("Progression"):WaitForChild("JourneyConfig"))
+local JourneyEvent = COH:WaitForChild("Progression"):WaitForChild("JourneyEvent")
+local PlayerPreferences = COH:WaitForChild("Game"):WaitForChild("PlayerPreferences")
+local Presentation = COH:WaitForChild("Presentation")
+local HudNavigation = require(Presentation:WaitForChild("HudNavigation"))
+local WindUI
 
 local SETTINGS = {
-    runnerEnabled = false,
-    strategyEnabled = false,
+    runnerEnabled = true,
     strategy = "Hero",
-    customSpeed = true,
-    speedMultiplier = 2.5,
+    customSpeed = false,
+    speedMultiplier = 1.0,
     autoGems = true,
     gemScanInterval = 0.25,
     gemMaxDistance = 220,
@@ -35,9 +44,9 @@ local SETTINGS = {
     reviveBeforeGems = true,
     reviveMaxDistance = 220,
     avoidCatchers = true,
-    predictionTime = 0.9,
+    predictionTime = 0.65,
     avoidStrength = 2.2,
-    panicDistance = 26,
+    panicDistance = 15,
     safezoneDepthRatio = 0.52,
     safezoneValidationRatio = 0.44,
     safezoneEdgeMargin = 4.5,
@@ -46,9 +55,9 @@ local SETTINGS = {
     edgeLookAhead = 14,
     edgeSecondLookAhead = 28,
     autoDash = true,
-    dashCooldown = 0.6,
+    dashCooldown = 0.85,
     dashDistance = 48,
-    dashClosingSpeed = 8,
+    dashClosingSpeed = 10,
     smoothMovement = true,
     turnRate = 9,
     emergencySafeZone = true,
@@ -60,10 +69,15 @@ local SETTINGS = {
     corridorLockTime = 1.65,
     corridorPassDistance = 20,
     corridorApproachDistance = 60,
+    sideGapEnabled = true,
+    sideGapAngles = {18, 30, 42, 54, 68, 82},
+    sideGapMinClearance = 3.5,
+    sideGapCommitTime = 0.8,
+    sideGapForwardBias = 6.5,
 
     catcherChase = true,
-    catcherCustomSpeed = true,
-    catcherSpeedMultiplier = 2.5,
+    catcherCustomSpeed = false,
+    catcherSpeedMultiplier = 1.0,
     catcherPrediction = 0.45,
     catcherSmoothing = 6,
     smartPriority = true,
@@ -81,23 +95,28 @@ local SETTINGS = {
     showHitboxes = true,
     showGoalUtility = true,
     showThreatUtility = false,
+    showDebugUI = false,
     cameraFollow = true,
     cameraResponse = 0.25,
+    autoSpinWheel = false,
+    wheelSpinInterval = 6,
+    wheelMinimumCredits = 1,
+    wheelAnnounce = true,
+    autoClaimJourneyRewards = false,
+    journeyClaimAnnounce = true,
+    autoMapVote = false,
+    mapVoteAnnounce = true,
+    mapVoteSelections = {},
+    disableBuiltinAFK = false,
 }
 
 local runtime = {
-    debugEnabled = true,
-    debugGui = nil,
-    debugLabel = nil,
-    debugError = "",
-    debugFrames = 0,
-    debugMoveCalls = 0,
-    debugLastStep = -math.huge,
-    debugLastMove = -math.huge,
-    debugPanelAt = -math.huge,
     profile = nil,
     profileRole = nil,
     runnerTick = 0,
+    runnerPlanAt = -math.huge,
+    runnerPlanDirection = Vector3.zero,
+    runnerPlanGoal = Vector3.zero,
     catcherTick = 0,
     utilityTick = 0,
     lastMove = os.clock(),
@@ -124,6 +143,9 @@ local runtime = {
     threatAt = 0,
     threatHistory = {},
     dashAt = -math.huge,
+    dashStatus = "idle",
+    dashLastRequestAt = -math.huge,
+    dashLastCount = nil,
     ping = 0,
     pingAt = 0,
     armory = {loaded = false, abilities = {}},
@@ -145,6 +167,10 @@ local runtime = {
     edgeCheckDirection = Vector3.zero,
     edgeCheckGoal = Vector3.zero,
     edgeRecoveryAt = -math.huge,
+    edgeRecoveryDirection = Vector3.zero,
+    edgeRecoveryUntil = -math.huge,
+    stuckRecoveryUntil = -math.huge,
+    stuckRecoveryDirection = Vector3.zero,
     safeCheckAt = -math.huge,
     safeCheckPosition = nil,
     safeCheckA = false,
@@ -161,6 +187,62 @@ local runtime = {
     corridorAxis = Vector3.zero,
     corridorGapWidth = 0,
     corridorStartedAt = -math.huge,
+    sideGapDirection = Vector3.zero,
+    sideGapUntil = -math.huge,
+    sideGapReason = "",
+    wheelScanAt = -math.huge,
+    wheelActionAt = -math.huge,
+    wheelStatus = "disabled",
+    wheelLastButton = nil,
+    wheelSpinCount = 0,
+    wheelCredits = 0,
+    wheelNextFreeAt = 0,
+    wheelPurchasesAvailable = false,
+    wheelDiscountAvailable = false,
+    wheelStateRequestAt = -math.huge,
+    wheelSpinRequestAt = -math.huge,
+    wheelEventReady = false,
+    wheelSpinning = false,
+    wheelLastStateAt = -math.huge,
+    wheelStatusAt = -math.huge,
+    wheelNextAttemptAt = -math.huge,
+    wheelMinimumCredits = 1,
+    afkOverrideStatus = "disabled",
+    afkOverrideLastRequestAt = -math.huge,
+    afkOverrideRequestInterval = 2.0,
+    afkOverrideInLobby = false,
+    afkOverrideRequestCount = 0,
+    journeyScanAt = -math.huge,
+    journeyStatus = "disabled",
+    journeyClaimCount = 0,
+    journeyLastClaimAt = -math.huge,
+    journeyClaimedButtons = {},
+    journeyLoaded = false,
+    journeySeasonId = nil,
+    journeyRequestAt = -math.huge,
+    journeyClaimInFlight = false,
+    journeyLastStateAt = -math.huge,
+    journeyTier = 1,
+    journeyPremium = false,
+    journeyClaims = {},
+    journeyLastClaimResultAt = -math.huge,
+    mapVoteScanAt = -math.huge,
+    mapVoteStatus = "disabled",
+    mapVoteOptions = {},
+    mapVoteLastActionAt = -math.huge,
+    mapVoteOpen = false,
+    mapVotePhase = "Waiting",
+    mapVoteToken = nil,
+    mapVoteOptionIds = {},
+    mapVoteLastStateAt = -math.huge,
+    debugLastError = nil,
+    debugLastErrorAt = -math.huge,
+    debugEnabled = false,
+    debugGui = nil,
+    debugLabel = nil,
+    debugPanelAt = -math.huge,
+    journeyNextClaimAt = -math.huge,
+    journeyManualPending = false,
 }
 
 local safezone = {
@@ -176,61 +258,13 @@ local visuals = {
     hitboxes = {},
 }
 
-local function setDebugError(value)
-    runtime.debugError = tostring(value or "")
-end
+local MAP_VOTE_SLOT_IDS = {
+    "Map 1",
+    "Map 2",
+    "Map 3",
+}
 
-local function getDebugGui()
-    if runtime.debugGui and runtime.debugGui.Parent and runtime.debugLabel and runtime.debugLabel.Parent then
-        return runtime.debugGui, runtime.debugLabel
-    end
-    local playerGui = LocalPlayer:FindFirstChildOfClass("PlayerGui") or LocalPlayer:WaitForChild("PlayerGui", 5)
-    if not playerGui then
-        return nil, nil
-    end
-    local old = playerGui:FindFirstChild("CoH_FullDebug")
-    if old then
-        old:Destroy()
-    end
-    local gui = Instance.new("ScreenGui")
-    gui.Name = "CoH_FullDebug"
-    gui.ResetOnSpawn = false
-    gui.IgnoreGuiInset = true
-    gui.DisplayOrder = 9999
-    gui.Enabled = false
-    gui.Parent = playerGui
-
-    local frame = Instance.new("Frame")
-    frame.Name = "Panel"
-    frame.Size = UDim2.fromOffset(430, 300)
-    frame.Position = UDim2.fromOffset(10, 70)
-    frame.BackgroundTransparency = 0.12
-    frame.BackgroundColor3 = Color3.fromRGB(10, 14, 22)
-    frame.BorderSizePixel = 0
-    frame.Parent = gui
-
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 8)
-    corner.Parent = frame
-
-    local label = Instance.new("TextLabel")
-    label.Name = "Status"
-    label.Size = UDim2.new(1, -20, 1, -20)
-    label.Position = UDim2.fromOffset(10, 10)
-    label.BackgroundTransparency = 1
-    label.TextColor3 = Color3.fromRGB(235, 240, 250)
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.TextYAlignment = Enum.TextYAlignment.Top
-    label.Font = Enum.Font.Code
-    label.TextSize = 13
-    label.TextWrapped = false
-    label.Text = "Huss Valley Debug"
-    label.Parent = frame
-
-    runtime.debugGui = gui
-    runtime.debugLabel = label
-    return gui, label
-end
+local MapVoteDropdown
 
 local function flat(v)
     return Vector3.new(v.X, 0, v.Z)
@@ -267,60 +301,6 @@ local function isRunnerActive()
         return false
     end
     return getRunState() == "Active"
-end
-
-local function updateDebugPanel(now)
-    if not runtime.debugEnabled then
-        if runtime.debugGui then
-            runtime.debugGui.Enabled = false
-        end
-        return
-    end
-    local gui, label = getDebugGui()
-    if not gui or not label then
-        return
-    end
-    gui.Enabled = true
-    local c = getCharacter()
-    local hum = getHumanoid()
-    local root = getRoot()
-    local safeA = safezone.a and safezone.a.name or "nil"
-    local safeB = safezone.b and safezone.b.name or "nil"
-    local role = tostring(getRole())
-    local state = tostring(getRunState())
-    local inMatch = tostring(LocalPlayer:GetAttribute("InMatch"))
-    local clientReady = tostring(LocalPlayer:GetAttribute("ClientReady"))
-    local locked = tostring(c and c:GetAttribute("MovementLocked"))
-    local ragdolled = tostring(c and c:GetAttribute("Ragdolled"))
-    local gearMotion = tostring(c and c:GetAttribute("GearMotion"))
-    local position = root and root.Position or Vector3.zero
-    local goalDistance = runtime.goal and flat(runtime.goal - position).Magnitude or -1
-    local moveAge = runtime.debugLastMove > 0 and (now - runtime.debugLastMove) or -1
-    local stepAge = runtime.debugLastStep > 0 and (now - runtime.debugLastStep) or -1
-    local speed = hum and hum.WalkSpeed or -1
-    local hp = hum and hum.Health or -1
-    local path = runtime.path or Vector3.zero
-    local assist = runtime.assistMode or "none"
-    local revive = runtime.reviveStarted and "started" or "idle"
-    local gem = runtime.gemTarget and runtime.gemTarget.Parent and runtime.gemTarget.Name or "none"
-    local err = runtime.debugError ~= "" and runtime.debugError or "none"
-    label.Text = table.concat({
-        "Huss Valley | FULL DEBUG",
-        "Role=" .. role .. " | RunState=" .. state .. " | InMatch=" .. inMatch .. " | ClientReady=" .. clientReady,
-        "MovementLocked=" .. locked .. " | Ragdolled=" .. ragdolled .. " | GearMotion=" .. gearMotion,
-        "Humanoid=" .. tostring(hum ~= nil) .. " | HP=" .. string.format("%.1f", hp) .. " | WalkSpeed=" .. string.format("%.1f", speed),
-        "SafeA=" .. safeA .. " | SafeB=" .. safeB .. " | Cached=" .. tostring(safezone.cached),
-        "RoundStart=" .. tostring(runtime.routeStartSide or "none") .. " | Destination=" .. tostring(runtime.routeTargetSide or "none") .. " | Complete=" .. tostring(runtime.routeComplete),
-        "GoalMode=" .. tostring(runtime.goalMode) .. " | GoalDistance=" .. string.format("%.1f", goalDistance),
-        "Assist=" .. assist .. " | Revive=" .. revive .. " | Gem=" .. gem,
-        "Threats=" .. tostring(#runtime.threats) .. " | Stuck=" .. tostring(runtime.stuck) .. " | EdgeRisk=" .. tostring(runtime.edgeRisk),
-        "Threat0=" .. (runtime.threats[1] and string.format("d=%.1f gap=%.1f t=%.2f risk=%s tackle=%s", runtime.threats[1].distance, runtime.threats[1].interceptGap or -1, runtime.threats[1].interceptTime or -1, tostring(runtime.threats[1].collisionRisk), tostring(runtime.threats[1].tackle)) or "none"),
-        "Path=" .. string.format("%.2f, %.2f", path.X, path.Z),
-        "Frames=" .. tostring(runtime.debugFrames) .. " | MoveCalls=" .. tostring(runtime.debugMoveCalls),
-        "StepAge=" .. string.format("%.3f", stepAge) .. " | LastMoveAge=" .. string.format("%.3f", moveAge),
-        "Catcher=" .. tostring(getRole() == "Catcher") .. " | Chase=" .. tostring(SETTINGS.catcherChase) .. " | TackleActive=" .. tostring(c and c:GetAttribute("TackleActive") == true) .. " | Target=" .. tostring(runtime.catcherTarget and runtime.catcherTarget.Name or "none"),
-        "LastError=" .. err,
-    }, "\n")
 end
 
 local function isCatcherActive()
@@ -371,7 +351,7 @@ local function getBaseSpeed(role)
     if runtime.profile and runtime.profileRole == role then
         return runtime.profile.MaxSpeed or 16
     end
-    local ok, profile = pcall(MovementProfiles.get, MovementProfiles, role, LocalPlayer)
+    local ok, profile = pcall(MovementProfiles.get, role, LocalPlayer)
     if ok and profile then
         runtime.profile = profile
         runtime.profileRole = role
@@ -381,13 +361,31 @@ local function getBaseSpeed(role)
 end
 
 local function getRunnerSpeed()
-    local base = math.max(getBaseSpeed("Runner"), 1)
-    return SETTINGS.customSpeed and base * SETTINGS.speedMultiplier or base
+    local speed = math.max(getBaseSpeed("Runner"), 1)
+    if SETTINGS.customSpeed then
+        speed *= math.clamp(SETTINGS.speedMultiplier, 1, 2)
+    end
+    return speed
 end
 
 local function getCatcherSpeed()
-    local base = math.max(getBaseSpeed("Catcher"), 1)
-    return SETTINGS.catcherCustomSpeed and base * SETTINGS.catcherSpeedMultiplier or base
+    local speed = math.max(getBaseSpeed("Catcher"), 1)
+    if SETTINGS.catcherCustomSpeed then
+        speed *= math.clamp(SETTINGS.catcherSpeedMultiplier, 1, 2)
+    end
+    return speed
+end
+
+local function restoreNativeWalkSpeed()
+    local hum = getHumanoid()
+    local character = getCharacter()
+    if not hum or not character then
+        return
+    end
+    local native = tonumber(character:GetAttribute("MovementSpeed"))
+    if native and native > 0 then
+        hum.WalkSpeed = native
+    end
 end
 
 local function refreshPing(now)
@@ -427,24 +425,90 @@ end
 local edgeRayCache = {
     map = nil,
     field = nil,
+    invisWall = nil,
     params = nil,
+    wallParams = nil,
 }
 
-local function getEdgeRayParams()
-    local map = getMap()
-    if edgeRayCache.map == map and edgeRayCache.params then
-        return edgeRayCache.params
+local function resolveActiveField(map)
+    if not map then
+        return nil
     end
-    local field = map and map:FindFirstChild("Field")
+    local field = map:FindFirstChild("Field")
+    if field then
+        return field
+    end
+    return map:FindFirstChild("Field", true)
+end
+
+local function resolveActiveInvisWall(field)
+    if not field then
+        return nil
+    end
+    return field:FindFirstChild("InvisWall", true)
+end
+
+local function refreshEdgeRayCache()
+    local map = getMap()
+    local field = resolveActiveField(map)
+    local wall = resolveActiveInvisWall(field)
     local include = field or map
+
+    if edgeRayCache.map == map
+        and edgeRayCache.field == field
+        and edgeRayCache.invisWall == wall
+        and edgeRayCache.params then
+        return
+    end
+
     local params = RaycastParams.new()
     params.FilterType = Enum.RaycastFilterType.Include
     params.FilterDescendantsInstances = include and {include} or {}
     params.IgnoreWater = true
+
     edgeRayCache.map = map
     edgeRayCache.field = field
+    edgeRayCache.invisWall = wall
     edgeRayCache.params = params
-    return params
+    edgeRayCache.wallParams = nil
+end
+
+local function getEdgeRayParams()
+    refreshEdgeRayCache()
+    return edgeRayCache.params
+end
+
+local function getInvisWallParams()
+    refreshEdgeRayCache()
+    local wall = edgeRayCache.invisWall
+    if not wall or not wall:IsDescendantOf(workspace) then
+        edgeRayCache.invisWall = nil
+        edgeRayCache.wallParams = nil
+        return nil
+    end
+    if edgeRayCache.wallParams then
+        return edgeRayCache.wallParams
+    end
+    local wallParams = RaycastParams.new()
+    wallParams.FilterType = Enum.RaycastFilterType.Include
+    wallParams.FilterDescendantsInstances = {wall}
+    wallParams.IgnoreWater = true
+    edgeRayCache.wallParams = wallParams
+    return wallParams
+end
+
+local function invisWallHit(position, direction, distance)
+    local dir = flat(direction)
+    if dir.Magnitude < 0.05 then
+        return nil
+    end
+    local params = getInvisWallParams()
+    if not params then
+        return nil
+    end
+    dir = dir.Unit
+    local origin = Vector3.new(position.X, position.Y + 2.5, position.Z)
+    return workspace:Raycast(origin, dir * distance, params)
 end
 
 local function floorRay(point, y)
@@ -505,7 +569,8 @@ local function boundaryInwardDirection(position, y)
     local outward = Vector3.zero
     local missing = 0
     for _, dir in ipairs(dirs) do
-        if not hasFloorAt(position + dir * 7, y) then
+        local wallHit = invisWallHit(position, dir, 9)
+        if wallHit or not hasFloorAt(position + dir * 7, y) then
             outward += dir
             missing += 1
         end
@@ -530,6 +595,9 @@ local function edgeDirectionClear(position, direction, y, distance)
         return false
     end
     dir = dir.Unit
+    if invisWallHit(position, dir, math.max(8, distance)) then
+        return false
+    end
     local score = groundSupportScore(position, dir, y)
     if distance <= 14 then
         return score >= 4
@@ -1223,7 +1291,9 @@ local function updateThreats(now, position)
                     closestTime = math.clamp(-relative:Dot(relativeVelocity) / relSpeedSq, 0, 1.8)
                 end
 
-                local prediction = math.clamp(SETTINGS.predictionTime + runtime.ping * 1.35, 0.32, 1.65)
+                local prediction = math.clamp(SETTINGS.predictionTime + runtime.ping * 0.85, 0.28, 1.15)
+                local velocityFactor = math.clamp(velocity.Magnitude / math.max(runSpeed, 1), 0.65, 1.25)
+                prediction = math.clamp(prediction * velocityFactor, 0.28, 1.15)
                 local character = player.Character
                 local tackle = character and character:GetAttribute("TackleActive") == true
                 local tackleDirection = character and character:GetAttribute("TackleDirection")
@@ -1293,10 +1363,10 @@ local function updateThreats(now, position)
                     interceptGap = flat(interceptCatcher - interceptRunner).Magnitude
                 end
 
-                local collisionRisk = timeToDanger <= prediction + 0.08
-                    or interceptGap <= danger * 1.65
-                    or (tackle and interceptGap <= danger * 2.5)
-                local preTackle = closing >= math.max(5.5, runSpeed * 0.3) and distance <= 58
+                local collisionRisk = timeToDanger <= math.min(prediction + 0.04, 0.72)
+                    or interceptGap <= danger * 1.35
+                    or (tackle and interceptGap <= danger * 2.15)
+                local preTackle = closing >= math.max(6.5, runSpeed * 0.34) and distance <= 50
                 runtime.threats[#runtime.threats + 1] = {
                     player = player,
                     root = root,
@@ -1358,7 +1428,7 @@ local function routeClear(position, direction, threats)
     local dir = direction.Unit
     local speed = math.max(getRunnerSpeed(), 1)
     local clearance = math.huge
-    local samples = {0.12, 0.24, 0.38, 0.55, 0.75, 0.95, 1.15}
+    local samples = {0.10, 0.22, 0.36, 0.52, 0.70, 0.90}
     for _, t in ipairs(samples) do
         local runner = position + dir * speed * t
         for _, threat in ipairs(threats) do
@@ -1574,6 +1644,9 @@ local function corridorDirection(position, goal, threats)
     end
     desired = desired.Unit
     local candidates = {}
+    if runtime.sideGapDirection.Magnitude > 0.05 and os.clock() < runtime.sideGapUntil then
+        addDirection(candidates, runtime.sideGapDirection)
+    end
     addDirection(candidates, desired)
     for _, angle in ipairs({12, -12, 24, -24, 38, -38, 52, -52, 70, -70, 90, -90}) do
         addDirection(candidates, rotate(desired, angle))
@@ -1599,56 +1672,207 @@ local function corridorDirection(position, goal, threats)
     return best.Unit
 end
 
+local function chooseSideGapDirection(position, desired, threats)
+    if not SETTINGS.sideGapEnabled or #threats == 0 then
+        return nil, nil, -math.huge
+    end
+    local front = flat(desired)
+    if front.Magnitude < 0.05 then
+        return nil, nil, -math.huge
+    end
+    front = front.Unit
+    local lateral = Vector3.new(-front.Z, 0, front.X)
+
+    local nearest = nil
+    local nearestDistance = math.huge
+    for _, threat in ipairs(threats) do
+        local rel = flat(threat.predicted - position)
+        if rel.Magnitude > 0.05 then
+            local forward = rel:Dot(front)
+            local lateralOffset = math.abs(rel:Dot(lateral))
+            if forward > 0 and forward <= 34 and lateralOffset <= 16 and threat.distance < nearestDistance then
+                nearest = threat
+                nearestDistance = threat.distance
+            end
+        end
+    end
+    if not nearest then
+        return nil, nil, -math.huge
+    end
+
+    local rel = flat(nearest.predicted - position)
+    local forwardGap = rel:Dot(front)
+    local lateralOffset = rel:Dot(lateral)
+    local frontBlocked = forwardGap > 0 and forwardGap < math.max(12, nearest.danger * 2.2)
+        and math.abs(lateralOffset) < 13
+    if not frontBlocked then
+        return nil, nil, -math.huge
+    end
+
+    local candidates = {}
+    for _, angle in ipairs(SETTINGS.sideGapAngles) do
+        local rad = math.rad(angle)
+        local c = math.cos(rad)
+        local sn = math.sin(rad)
+        local leftDir = (front * c + lateral * sn)
+        local rightDir = (front * c - lateral * sn)
+        candidates[#candidates + 1] = {dir = leftDir.Unit, side = "left"}
+        candidates[#candidates + 1] = {dir = rightDir.Unit, side = "right"}
+    end
+
+    local best, bestScore, bestSide = nil, -math.huge, nil
+    for _, item in ipairs(candidates) do
+        local candidate = item.dir
+        local clearance = routeClear(position, candidate, threats)
+        local support = groundSupportScore(position, candidate, position.Y)
+        local wallBlocked = invisWallHit(position, candidate, 16) ~= nil
+        if not wallBlocked and support >= 3 and clearance >= -1 then
+            local forwardProgress = candidate:Dot(front)
+            local sideProgress = math.abs(candidate:Dot(lateral))
+            local score = forwardProgress * SETTINGS.sideGapForwardBias
+                + sideProgress * 7
+                + math.min(clearance, 14) * 3.2
+                + support * 1.4
+            local towardCatcher = rel:Dot(lateral)
+            local away = item.side == "left" and -towardCatcher or towardCatcher
+            score += math.clamp(away / 10, -1, 1) * 4
+            if clearance >= SETTINGS.sideGapMinClearance then
+                score += 5
+            end
+            if score > bestScore then
+                best = candidate
+                bestScore = score
+                bestSide = item.side
+            end
+        end
+    end
+
+    if best then
+        return best, bestSide, bestScore
+    end
+    return nil, nil, -math.huge
+end
+
 local function chooseRunnerDirection(position, goal, threats)
     local desired = flat(goal - position)
     if desired.Magnitude < 0.05 then
         return Vector3.zero
     end
     desired = desired.Unit
+
+    local sideGap, sideName = chooseSideGapDirection(position, desired, threats)
+    if sideGap then
+        runtime.sideGapDirection = sideGap
+        runtime.sideGapUntil = os.clock() + SETTINGS.sideGapCommitTime
+        runtime.sideGapReason = "front-blocked:" .. tostring(sideName)
+        return sideGap
+    elseif runtime.sideGapDirection.Magnitude > 0.05 and os.clock() < runtime.sideGapUntil then
+        local clear = routeClear(position, runtime.sideGapDirection, threats)
+        if clear >= 0 and not invisWallHit(position, runtime.sideGapDirection, 14) then
+            return runtime.sideGapDirection
+        end
+    else
+        runtime.sideGapDirection = Vector3.zero
+        runtime.sideGapReason = ""
+    end
+
     if not SETTINGS.avoidCatchers or #threats == 0 then
+        runtime.sideGapDirection = Vector3.zero
+        runtime.sideGapUntil = -math.huge
+        runtime.sideGapReason = ""
         return desired
     end
 
     local candidates = {}
     addDirection(candidates, desired)
-    local corridorMode = runtime.corridorActive and runtime.corridorGoal.Magnitude > 0.05
-    if corridorMode then
-        for _, angle in ipairs({12, -12, 24, -24, 38, -38, 52, -52, 70, -70, 90, -90}) do
-            addDirection(candidates, rotate(desired, angle))
+
+    for _, angle in ipairs({
+        10, -10, 22, -22, 34, -34, 48, -48, 62, -62, 76, -76, 88, -88
+    }) do
+        addDirection(candidates, rotate(desired, angle))
+    end
+
+    local blocker = threats[1]
+    local nearestScore = math.huge
+    for _, threat in ipairs(threats) do
+        local toThreat = flat(threat.position - position)
+        local ahead = toThreat:Dot(desired)
+        local distance = toThreat.Magnitude
+        if ahead > 0 and distance < nearestScore then
+            nearestScore = distance
+            blocker = threat
         end
-    else
-        for _, angle in ipairs({18, -18, 36, -36, 60, -60, 90, -90, 135, -135}) do
-            addDirection(candidates, rotate(desired, angle))
+    end
+
+    if blocker then
+        local toBlocker = flat(blocker.position - position)
+        if toBlocker.Magnitude > 0.05 then
+            local lateral = Vector3.new(-desired.Z, 0, desired.X)
+            local side = toBlocker:Dot(lateral) >= 0 and -1 or 1
+            addDirection(candidates, (desired + lateral * side * 0.55).Unit)
+            addDirection(candidates, (desired + lateral * side * 0.95).Unit)
+            addDirection(candidates, (desired - lateral * side * 0.55).Unit)
+            addDirection(candidates, (desired - lateral * side * 0.95).Unit)
         end
-        for i = 1, math.min(4, #threats) do
-            local threat = threats[i]
-            local away = flat(position - threat.intercept)
-            if away.Magnitude > 0.05 then
-                addDirection(candidates, away)
-                addDirection(candidates, rotate(away, 30))
-                addDirection(candidates, rotate(away, -30))
-            end
+    end
+
+    if runtime.stuck then
+        local lateral = Vector3.new(-desired.Z, 0, desired.X)
+        addDirection(candidates, lateral)
+        addDirection(candidates, -lateral)
+        local center = getPlayfieldCenter()
+        if center then
+            addDirection(candidates, flat(center - position))
         end
     end
 
     local best = desired
     local bestScore = -math.huge
+    local emergency = false
+    for _, threat in ipairs(threats) do
+        if threat.collisionRisk or threat.tackle
+            or (threat.preTackle and threat.closing > 0) then
+            emergency = true
+            break
+        end
+    end
+
     for _, candidate in ipairs(candidates) do
         local progress = candidate:Dot(desired)
-        if corridorMode and progress < -0.05 then
+        local clearance = routeClear(position, candidate, threats)
+        local wallBlocked = invisWallHit(position, candidate, 18) ~= nil
+        if wallBlocked then
             continue
         end
-        local clearance = routeClear(position, candidate, threats)
-        local score = progress * 5 + math.min(clearance, 18) * 1.35 * SETTINGS.avoidStrength
-        if clearance < 0 then
-            score -= math.abs(clearance) * 14 * SETTINGS.avoidStrength
-        elseif clearance < 5 then
-            score -= (5 - clearance) * 6 * SETTINGS.avoidStrength
+
+        if not emergency and progress < 0.04 then
+            continue
         end
+
+        local score = progress * 10
+        score += math.min(clearance, 20) * 2.4 * SETTINGS.avoidStrength
+
+        if clearance < 0 then
+            score -= math.abs(clearance) * 18 * SETTINGS.avoidStrength
+        elseif clearance < 5 then
+            score -= (5 - clearance) * 5 * SETTINGS.avoidStrength
+        end
+
+        if progress > 0.18 and math.abs(candidate:Dot(desired)) < 0.96 then
+            score += math.min(math.max(clearance, 0), 8) * 1.15
+        end
+
         for _, threat in ipairs(threats) do
             local away = flat(position - threat.intercept)
             if away.Magnitude > 0.05 then
-                local urgency = math.clamp(1 - math.min(threat.interceptGap, threat.timeToDanger * math.max(threat.closing, 1)) / math.max(threat.danger * 3, 1), 0, 1)
+                local urgency = math.clamp(
+                    1 - math.min(
+                        threat.interceptGap,
+                        threat.timeToDanger * math.max(threat.closing, 1)
+                    ) / math.max(threat.danger * 3, 1),
+                    0,
+                    1
+                )
                 local weight = (threat.collisionRisk and 14 or 4.5) * SETTINGS.avoidStrength
                 if threat.tackle then
                     weight *= 1.45
@@ -1656,72 +1880,112 @@ local function chooseRunnerDirection(position, goal, threats)
                 score += candidate:Dot(away.Unit) * urgency * weight
             end
         end
+
+        if runtime.edgeRisk then
+            local inward = runtime.edgeDirection
+            if inward.Magnitude > 0.05 then
+                score += candidate:Dot(inward.Unit) * 7
+            end
+        end
+
         if score > bestScore then
             bestScore = score
             best = candidate
         end
+    end
+
+    if best.Magnitude < 0.05 then
+        return desired
     end
     return best.Unit
 end
 
 local function chooseDashDirection(position, direction, threats)
     local desired = flat(direction)
-    if desired.Magnitude < 0.05 then
-        desired = flat(getRoot().CFrame.LookVector)
+    local root = getRoot()
+    if desired.Magnitude < 0.05 and root then
+        desired = flat(root.CFrame.LookVector)
     end
     if desired.Magnitude < 0.05 then
         return Vector3.zero
     end
     desired = desired.Unit
-    if #threats == 0 then
-        return desired
-    end
+
     local candidates = {}
     addDirection(candidates, desired)
-    for _, angle in ipairs({25, -25, 45, -45, 65, -65, 90, -90}) do
+    for _, angle in ipairs({
+        18, -18, 32, -32, 48, -48, 64, -64, 82, -82, 90, -90
+    }) do
         addDirection(candidates, rotate(desired, angle))
     end
+
+    if runtime.edgeRisk and runtime.edgeDirection.Magnitude > 0.05 then
+        addDirection(candidates, runtime.edgeDirection)
+        addDirection(candidates, rotate(runtime.edgeDirection, 28))
+        addDirection(candidates, rotate(runtime.edgeDirection, -28))
+    end
+
     local awaySum = Vector3.zero
     for i = 1, math.min(6, #threats) do
         local threat = threats[i]
         local away = flat(position - threat.predicted)
         if away.Magnitude > 0.05 then
-            local weight = math.clamp(1 - threat.distance / 70, 0.15, 1)
+            local weight = math.clamp(1 - threat.distance / 60, 0.2, 1)
             if threat.tackle then
-                weight *= 2
+                weight *= 2.2
             elseif threat.preTackle then
-                weight *= 1.4
+                weight *= 1.5
             end
             awaySum += away.Unit * weight
         end
     end
     if awaySum.Magnitude > 0.05 then
         addDirection(candidates, awaySum.Unit)
-        addDirection(candidates, rotate(awaySum.Unit, 35))
-        addDirection(candidates, rotate(awaySum.Unit, -35))
+        addDirection(candidates, rotate(awaySum.Unit, 28))
+        addDirection(candidates, rotate(awaySum.Unit, -28))
     end
+
     local best = desired
     local bestScore = -math.huge
     for _, candidate in ipairs(candidates) do
         local clearance = routeClear(position, candidate, threats)
-        local score = clearance * 4.5 + candidate:Dot(desired) * 2
-        if awaySum.Magnitude > 0.05 then
-            score += candidate:Dot(awaySum.Unit) * 4
+        local progress = candidate:Dot(desired)
+        local score = progress * 4.5 + math.min(clearance, 20) * 5.0
+
+        if progress < -0.05 then
+            score -= 18
         end
+
+        if clearance < 0 then
+            score -= math.abs(clearance) * 22
+        elseif clearance < 5 then
+            score -= (5 - clearance) * 5
+        end
+
+        if awaySum.Magnitude > 0.05 then
+            score += candidate:Dot(awaySum.Unit) * 7
+        end
+
+        if runtime.edgeRisk and runtime.edgeDirection.Magnitude > 0.05 then
+            score += candidate:Dot(runtime.edgeDirection.Unit) * 10
+        end
+
         for _, threat in ipairs(threats) do
             local predicted = threat.predicted
-            local dashPoint = position + candidate * math.min(getRunnerSpeed() * 0.35, 10)
+            local dashPoint = position + candidate * math.min(getRunnerSpeed() * 0.45, 11)
             local gap = flat(dashPoint - predicted).Magnitude
-            if gap <= threat.danger * (threat.tackle and 1.5 or 1.15) then
-                score -= threat.tackle and 10 or 6
+            if gap <= threat.danger * (threat.tackle and 1.55 or 1.2) then
+                score -= threat.tackle and 14 or 8
             end
         end
+
         if score > bestScore then
             bestScore = score
             best = candidate
         end
     end
-    return best
+
+    return best.Unit
 end
 
 local function getAbilityKey()
@@ -1780,91 +2044,147 @@ local function requestDash(direction, now)
     if not SETTINGS.autoDash or not isRunnerActive() then
         return false
     end
+
+    local character = getCharacter()
+    local root = getRoot()
+    if not character or not root then
+        runtime.dashStatus = "no-character"
+        return false
+    end
+
+    local okAvailable, available = pcall(BoostInput.available, LocalPlayer)
+    if not okAvailable then
+        runtime.dashStatus = "available-error: " .. tostring(available)
+        return false
+    end
+    if available ~= true then
+        local cooldownUntil = tonumber(character:GetAttribute("DashCooldownUntil")) or 0
+        runtime.dashStatus = cooldownUntil > os.clock() and "cooldown" or "not-available"
+        return false
+    end
+
+    local cooldownUntil = tonumber(character:GetAttribute("DashCooldownUntil")) or 0
+    if os.clock() < cooldownUntil then
+        runtime.dashStatus = "cooldown"
+        return false
+    end
+
     if now - runtime.dashAt < SETTINGS.dashCooldown then
+        runtime.dashStatus = "local-cooldown"
         return false
     end
 
-    local readyAt = 0
-    local sources = {LocalPlayer, getCharacter(), getRoot()}
-    for i = 1, #sources do
-        local object = sources[i]
-        if object then
-            local value = tonumber(object:GetAttribute("AbilityReadyAt")) or 0
-            if value > readyAt then
-                readyAt = value
-            end
-        end
-    end
-    if workspace:GetServerTimeNow() < readyAt then
-        return false
-    end
-
-    local key = getAbilityKey()
-    if not key then
-        if now - runtime.armoryAt >= 0.75 then
-            runtime.armoryAt = now
-            pcall(function()
-                ArmoryEvent:FireServer("Get")
-            end)
-        end
-        return false
-    end
-
-    local dir = flat(direction)
+    local hum = getHumanoid()
+    local dir = hum and flat(hum.MoveDirection) or Vector3.zero
     if dir.Magnitude < 0.05 then
+        dir = flat(direction)
+    end
+    if dir.Magnitude < 0.05 then
+        dir = flat(root.CFrame.LookVector)
+    end
+    if dir.Magnitude < 0.05 then
+        runtime.dashStatus = "no-direction"
         return false
     end
 
-    local ok, result = pcall(function()
-        return GearPredictionClient.request(key, dir.Unit, "UseAbility")
-    end)
-    if ok and result ~= false then
-        runtime.dashAt = now
-        return true
+    local beforeCount = tonumber(character:GetAttribute("DashCount")) or 0
+    local okRequest, result = pcall(BoostInput.request, nil)
+    runtime.dashLastRequestAt = now
+    runtime.dashLastCount = beforeCount
+
+    if not okRequest then
+        runtime.dashStatus = "request-error: " .. tostring(result)
+        return false
     end
-    return false
+    if result == false then
+        runtime.dashStatus = "request-rejected"
+        return false
+    end
+
+    runtime.dashAt = now
+    runtime.dashStatus = "requested:waiting-game-client"
+    return true
 end
 
 local function shouldDash(position, threats, goalDistance)
-    if not SETTINGS.autoDash or #threats == 0 then
+    if not SETTINGS.autoDash or not isRunnerActive() then
         return false
     end
 
-    local nearest = threats[1]
+    local now = os.clock()
+    if now - runtime.dashAt < 0.28 then
+        return false
+    end
+
+    if #threats == 0 then
+        return false
+    end
+
     local nearestDistance = math.huge
-    local dangerous = false
-    local crowd = 0
+    local nearestThreat = nil
+    local immediateDanger = false
+    local hardBlock = false
+    local imminentTime = math.huge
 
     for _, threat in ipairs(threats) do
         if threat.distance < nearestDistance then
             nearestDistance = threat.distance
-            nearest = threat
+            nearestThreat = threat
         end
-        local predictedDistance = flat(threat.predicted - position).Magnitude
-        if threat.distance <= 38 or predictedDistance <= 32 then
-            crowd += 1
-        end
-        if threat.tackle and threat.distance <= SETTINGS.dashDistance + 14 then
-            dangerous = true
-        elseif threat.preTackle and threat.distance <= SETTINGS.dashDistance + 4 then
-            dangerous = true
-        elseif threat.closing >= SETTINGS.dashClosingSpeed and threat.distance <= SETTINGS.dashDistance + 6 then
-            dangerous = true
+        local gap = tonumber(threat.interceptGap) or math.huge
+        local danger = math.max(tonumber(threat.danger) or 4, 4)
+        imminentTime = math.min(imminentTime, tonumber(threat.timeToDanger) or math.huge)
+
+        if threat.tackle and (
+            gap <= danger * 1.12
+            or (threat.timeToDanger or math.huge) <= 0.38
+            or threat.distance <= 10
+        ) then
+            immediateDanger = true
+        elseif threat.preTackle and (
+            gap <= danger * 1.05
+            and (threat.timeToDanger or math.huge) <= 0.48
+        ) then
+            immediateDanger = true
+        elseif threat.collisionRisk and (
+            gap <= danger * 1.02
+            and (threat.timeToDanger or math.huge) <= 0.42
+        ) then
+            immediateDanger = true
         end
     end
 
-    if crowd >= 3 or dangerous then
+    local currentPath = runtime.path
+    if currentPath.Magnitude > 0.05 then
+        local pathClearance = routeClear(position, currentPath, threats)
+        if pathClearance < -2.0 and nearestDistance <= 18 then
+            hardBlock = true
+        end
+    end
+
+    if runtime.sideGapDirection.Magnitude > 0.05
+        and os.clock() < runtime.sideGapUntil
+        and nearestDistance <= 14 then
+        local sideClearance = routeClear(position, runtime.sideGapDirection, threats)
+        if sideClearance >= SETTINGS.sideGapMinClearance and imminentTime <= 0.55 then
+            return true
+        end
+    end
+
+    if immediateDanger then
         return true
     end
-    if nearest and nearest.distance <= SETTINGS.panicDistance + 8 then
+
+    if hardBlock and nearestDistance <= 15 and imminentTime <= 0.55 then
         return true
     end
-    if nearest and runtime.path.Magnitude > 0.05 and routeClear(position, runtime.path, threats) < -1 then
+
+    if nearestThreat and nearestDistance <= 9 and imminentTime <= 0.45 then
         return true
     end
-    return goalDistance > 50 and nearest and nearest.distance < 24
+
+    return false
 end
-
 local function runnerGoal(position, now)
     runtime.goalMode = "SafeZone"
     local goal = select(1, chooseSafeGoal(position))
@@ -2022,14 +2342,15 @@ local function movementStuck(now, position)
 end
 
 local function runnerStep(now, dt)
-    runtime.debugFrames += 1
-    runtime.debugLastStep = now
 
     local role = getRole()
     local state = getRunState()
 
     if role ~= "Runner" or state ~= "Active" then
         runtime.path = Vector3.zero
+        runtime.runnerPlanAt = -math.huge
+        runtime.runnerPlanDirection = Vector3.zero
+        runtime.runnerPlanGoal = Vector3.zero
         runtime.goal = nil
         runtime.goalSide = nil
         runtime.goalMode = "SafeZone"
@@ -2042,6 +2363,9 @@ local function runnerStep(now, dt)
         clearCorridorLock()
         runtime.edgeRisk = false
         runtime.edgeDirection = Vector3.zero
+        runtime.sideGapDirection = Vector3.zero
+        runtime.sideGapUntil = -math.huge
+        runtime.sideGapReason = ""
         runtime.assistMode = nil
         runtime.assistTarget = nil
         if runtime.reviveStarted then
@@ -2096,9 +2420,7 @@ local function runnerStep(now, dt)
                 cancelRevive()
             end
             hum:Move(Vector3.zero, false)
-            runtime.debugMoveCalls += 1
-            runtime.debugLastMove = now
-            return
+                            return
         end
     end
     if not baseGoal then
@@ -2155,9 +2477,7 @@ local function runnerStep(now, dt)
             else
                 hum:Move(Vector3.zero, false)
                 runtime.path = Vector3.zero
-                runtime.debugMoveCalls += 1
-                runtime.debugLastMove = now
-                return
+                                        return
             end
         else
             cancelRevive()
@@ -2182,9 +2502,7 @@ local function runnerStep(now, dt)
             if runtime.routeComplete then
                 hum:Move(Vector3.zero, false)
                 runtime.path = Vector3.zero
-                runtime.debugMoveCalls += 1
-                runtime.debugLastMove = now
-                return
+                                        return
             end
             movementGoal = nextGoal or baseGoal
             runtime.goal = movementGoal
@@ -2272,17 +2590,33 @@ local function runnerStep(now, dt)
             end
             local best = direction
             local bestClearance = routeClear(position, direction, threats)
+            local forward = flat(movementGoal - position)
+            local forwardUnit = forward.Magnitude > 0.05 and forward.Unit or direction
+            local nearestGap = hardThreat.interceptGap
+            local allowReverse = nearestGap <= hardThreat.danger * 0.52
+            local foundForward = false
+
             for _, candidate in ipairs(candidates) do
+                local progress = candidate:Dot(forwardUnit)
+                if progress >= 0.08 then
+                    foundForward = true
+                elseif not allowReverse then
+                    continue
+                end
                 local clear = routeClear(position, candidate, threats)
-                if clear > bestClearance then
+                local adjusted = clear + progress * 2.5
+                local bestAdjusted = bestClearance + best:Dot(forwardUnit) * 2.5
+                if adjusted > bestAdjusted then
                     best = candidate
                     bestClearance = clear
                 end
             end
-            local emergency = hardThreat.interceptGap <= hardThreat.danger * (runtime.corridorActive and 1.12 or 1.6)
+            local emergency = hardThreat.interceptGap <= hardThreat.danger * (runtime.corridorActive and 1.05 or 1.35)
             if emergency or bestClearance < 3 then
                 direction = best
                 hardDodge = true
+            elseif foundForward then
+                hardDodge = false
             end
         end
     end
@@ -2310,12 +2644,58 @@ local function runnerStep(now, dt)
         end
     end
 
+    local nowEdge = now
     local edgeDirection, edgeRisk = chooseEdgeDirection(position, direction, movementGoal, position.Y)
     runtime.edgeRisk = edgeRisk
     runtime.edgeDirection = edgeDirection
     if edgeRisk and edgeDirection.Magnitude > 0.05 then
-        direction = edgeDirection
+        if runtime.edgeRecoveryDirection.Magnitude < 0.05
+            or nowEdge >= runtime.edgeRecoveryUntil
+            or runtime.edgeRecoveryDirection:Dot(edgeDirection) < 0.92 then
+            runtime.edgeRecoveryDirection = edgeDirection.Unit
+            runtime.edgeRecoveryAt = nowEdge
+            runtime.edgeRecoveryUntil = nowEdge + 0.72
+        end
+        direction = runtime.edgeRecoveryDirection
         hardDodge = true
+    elseif nowEdge >= runtime.edgeRecoveryUntil then
+        runtime.edgeRecoveryDirection = Vector3.zero
+    end
+
+    if runtime.stuck and movementGoal then
+        local center = getPlayfieldCenter()
+        local recovery = center and flat(center - position) or flat(movementGoal - position)
+        if recovery.Magnitude > 0.05 then
+            recovery = recovery.Unit
+            if runtime.stuckRecoveryDirection.Magnitude < 0.05
+                or nowEdge >= runtime.stuckRecoveryUntil
+                or runtime.stuckRecoveryDirection:Dot(recovery) < 0.75 then
+                local candidates = {
+                    recovery,
+                    rotateEdge(recovery, 35),
+                    rotateEdge(recovery, -35),
+                    rotateEdge(recovery, 70),
+                    rotateEdge(recovery, -70),
+                }
+                local best = recovery
+                local bestScore = -math.huge
+                for _, candidate in ipairs(candidates) do
+                    local support = groundSupportScore(position, candidate, position.Y)
+                    local progress = candidate:Dot(recovery)
+                    local score = support * 5 + progress * 4
+                    if score > bestScore then
+                        bestScore = score
+                        best = candidate.Unit
+                    end
+                end
+                runtime.stuckRecoveryDirection = best
+                runtime.stuckRecoveryUntil = nowEdge + 0.85
+            end
+            direction = runtime.stuckRecoveryDirection
+            hardDodge = true
+        end
+    elseif nowEdge >= runtime.stuckRecoveryUntil then
+        runtime.stuckRecoveryDirection = Vector3.zero
     end
 
     if SETTINGS.smoothMovement and not hardDodge and runtime.path.Magnitude > 0.05 and not runtime.stuck then
@@ -2328,20 +2708,32 @@ local function runnerStep(now, dt)
 
     runtime.path = direction
 
-    local speed = getRunnerSpeed()
-    if hum.WalkSpeed ~= speed then
-        hum.WalkSpeed = speed
-    end
     if hum.AutoRotate ~= true then
         hum.AutoRotate = true
     end
     hum:Move(direction, false)
-    runtime.debugMoveCalls += 1
-    runtime.debugLastMove = now
+
+    local character = getCharacter()
+    local dashCount = character and tonumber(character:GetAttribute("DashCount")) or nil
+    if dashCount and runtime.dashLastCount ~= nil and dashCount ~= runtime.dashLastCount then
+        runtime.dashStatus = "active:count " .. tostring(dashCount)
+        runtime.dashLastCount = dashCount
+    elseif runtime.dashLastRequestAt > 0 and now - runtime.dashLastRequestAt > 0.35
+        and now - runtime.dashAt > 0.35 and runtime.dashStatus == "requested:waiting-game-client" then
+        runtime.dashStatus = "no-dash-state-change"
+    end
 
     local goalDistance = flat(movementGoal - position).Magnitude
     if shouldDash(position, threats, goalDistance) then
-        requestDash(chooseDashDirection(position, direction, threats), now)
+        local dashDir = chooseDashDirection(position, direction, threats)
+        if runtime.sideGapDirection.Magnitude > 0.05 and os.clock() < runtime.sideGapUntil then
+            dashDir = runtime.sideGapDirection
+        elseif runtime.edgeRisk and runtime.edgeRecoveryDirection.Magnitude > 0.05 then
+            dashDir = runtime.edgeRecoveryDirection
+        elseif runtime.stuck and runtime.stuckRecoveryDirection.Magnitude > 0.05 then
+            dashDir = runtime.stuckRecoveryDirection
+        end
+        requestDash(dashDir, now)
     end
 
 end
@@ -2393,7 +2785,10 @@ end
 local function selectCatcherTarget(now, myPosition)
     refreshRunnerTargets(now)
     local best, bestScore
+    local currentScore
+    local currentTarget = runtime.catcherTarget
     local chaseSpeed = math.max(getCatcherSpeed(), 1)
+
     for _, player in ipairs(runtime.catcherTargets) do
         local root = getRoot(player)
         if root then
@@ -2411,12 +2806,20 @@ local function selectCatcherTarget(now, myPosition)
             if safe then
                 score += 18
             end
+            if player == currentTarget then
+                currentScore = score
+            end
             if not bestScore or score < bestScore then
                 best = player
                 bestScore = score
             end
         end
     end
+
+    if currentTarget and currentScore and bestScore and currentTarget ~= best and currentScore <= bestScore + 8 then
+        best = currentTarget
+    end
+
     runtime.catcherTarget = best
     return best
 end
@@ -2511,8 +2914,16 @@ local function catcherStep(now, dt)
         return
     end
     refreshPing(now)
+    local needsTarget = SETTINGS.catcherChase or SETTINGS.autoTackle or SETTINGS.autoMelee or SETTINGS.followTarget
+    if not needsTarget then
+        runtime.catcherTarget = nil
+        runtime.catcherPath = Vector3.zero
+        return
+    end
+
     local target = selectCatcherTarget(now, root.Position)
     if not target then
+        runtime.catcherTarget = nil
         return
     end
     local targetRoot = getRoot(target)
@@ -2526,15 +2937,13 @@ local function catcherStep(now, dt)
     local direction = catcherDirection(root, predicted, dt)
 
     if SETTINGS.catcherChase and direction.Magnitude > 0.05 then
-        local speed = getCatcherSpeed()
-        if hum.WalkSpeed ~= speed then
-            hum.WalkSpeed = speed
-        end
         hum.AutoRotate = true
         hum:Move(direction, false)
     end
 
-    catcherAttack(target, now, root)
+    if SETTINGS.autoTackle or SETTINGS.autoMelee then
+        catcherAttack(target, now, root)
+    end
 
     if SETTINGS.followTarget then
         local camera = workspace.CurrentCamera
@@ -2588,11 +2997,646 @@ local function cleanupVisuals()
     end
 end
 
+local function getGuiText(gui)
+    if not gui then
+        return ""
+    end
+    local ok, value = pcall(function()
+        if gui:IsA("TextButton") or gui:IsA("TextLabel") then
+            return gui.Text or ""
+        end
+        return gui:GetAttribute("Text") or ""
+    end)
+    return ok and tostring(value or "") or ""
+end
+
+local function wheelNameScore(gui, mode)
+    if not gui or not gui:IsA("GuiButton") then
+        return -math.huge
+    end
+    local name = string.lower(gui.Name or "")
+    local text = string.lower(getGuiText(gui))
+    local all = name .. " " .. text
+    local score = 0
+
+    if mode == "spin" then
+        if all:find("spin", 1, true) then score += 100 end
+        if all:find("free", 1, true) then score += 20 end
+        if all:find("roll", 1, true) then score += 12 end
+        if all:find("claim", 1, true) then score -= 25 end
+        if all:find("close", 1, true) then score -= 80 end
+        if all:find("back", 1, true) then score -= 60 end
+    else
+        if all:find("spin", 1, true) then score += 90 end
+        if all:find("wheel", 1, true) then score += 70 end
+        if all:find("daily", 1, true) then score += 10 end
+        if all:find("emote", 1, true) then score -= 100 end
+        if all:find("close", 1, true) then score -= 50 end
+    end
+
+    if not gui.Visible then score -= 100 end
+    if not gui.Active then score -= 20 end
+    return score
+end
+
+local function findWheelButton(mode)
+    local playerGui = LocalPlayer:FindFirstChildOfClass("PlayerGui")
+    if not playerGui then
+        return nil
+    end
+
+    local best, bestScore = nil, -math.huge
+    local ok, descendants = pcall(function()
+        return playerGui:GetDescendants()
+    end)
+    if not ok then
+        return nil
+    end
+
+    for _, gui in ipairs(descendants) do
+        if gui:IsA("GuiButton") and gui.Visible and gui.Active then
+            local score = wheelNameScore(gui, mode)
+            if score > bestScore then
+                best, bestScore = gui, score
+            end
+        end
+    end
+
+    if bestScore >= (mode == "spin" and 90 or 70) then
+        return best
+    end
+
+    return nil
+end
+
+
+local function guiContextText(gui, depth)
+    local parts = {}
+    local current = gui
+    local levels = depth or 5
+    for _ = 1, levels do
+        if not current then
+            break
+        end
+        local name = tostring(current.Name or "")
+        local text = getGuiText(current)
+        if name ~= "" then
+            table.insert(parts, name)
+        end
+        if text ~= "" then
+            table.insert(parts, text)
+        end
+        current = current.Parent
+    end
+    return string.lower(table.concat(parts, " "))
+end
+
+local function getGuiLabelText(gui)
+    local direct = getGuiText(gui)
+    if direct ~= "" then
+        return direct
+    end
+
+    local ok, descendants = pcall(function()
+        return gui:GetDescendants()
+    end)
+    if not ok then
+        return ""
+    end
+
+    for index = 1, math.min(#descendants, 12) do
+        local child = descendants[index]
+        if child:IsA("TextLabel") or child:IsA("TextButton") then
+            local text = tostring(child.Text or "")
+            if text ~= "" then
+                return text
+            end
+        end
+    end
+
+    return ""
+end
+
+local function requestJourneyState(force)
+    local now = os.clock()
+    if not force and now - runtime.journeyRequestAt < 1.5 then
+        return false
+    end
+    runtime.journeyRequestAt = now
+    local ok = pcall(function()
+        JourneyEvent:FireServer("Get")
+    end)
+    if not ok then
+        runtime.journeyStatus = "Journey state request failed"
+        return false
+    end
+    return true
+end
+
+local function journeyClaimableCount()
+    if not runtime.journeyLoaded then
+        return 0
+    end
+
+    local trackId = JourneyConfig.TrackId
+    local tier = math.max(1, tonumber(runtime.journeyTier) or 1)
+    local premium = runtime.journeyPremium == true
+    local claims = runtime.journeyClaims or {}
+    local count = 0
+
+    for index = 1, tier do
+        local rewardTier = JourneyConfig.Rewards[index]
+        if rewardTier then
+            local freeReward = rewardTier.Free
+            if freeReward and claims[trackId .. ":" .. tostring(freeReward.Key)] ~= true then
+                count += 1
+            end
+            if premium then
+                local premiumReward = rewardTier.Premium
+                if premiumReward and claims[trackId .. ":" .. tostring(premiumReward.Key)] ~= true then
+                    count += 1
+                end
+            end
+        end
+    end
+
+    return count
+end
+
+local function journeyClaimOnce(manual)
+    if not SETTINGS.autoClaimJourneyRewards and not manual then
+        runtime.journeyStatus = "disabled"
+        return false
+    end
+
+    if LocalPlayer:GetAttribute("InMatch") == true then
+        runtime.journeyStatus = "waiting for lobby"
+        return false
+    end
+
+    local now = os.clock()
+    if now < (runtime.journeyNextClaimAt or -math.huge) then
+        return false
+    end
+
+    if runtime.journeyClaimInFlight then
+        runtime.journeyStatus = "claim request pending"
+        return false
+    end
+
+    if not runtime.journeyLoaded then
+        runtime.journeyManualPending = manual == true or runtime.journeyManualPending
+        runtime.journeyStatus = "loading journey state"
+        requestJourneyState(true)
+        return false
+    end
+
+    local seasonId = runtime.journeySeasonId or JourneyConfig.SeasonId
+    if type(seasonId) ~= "string" or seasonId == "" then
+        runtime.journeyStatus = "season unavailable"
+        return false
+    end
+
+    local available = journeyClaimableCount()
+    if available <= 0 and not manual then
+        runtime.journeyStatus = "no claimable rewards"
+        runtime.journeyNextClaimAt = now + 2.5
+        return false
+    end
+
+    runtime.journeyClaimInFlight = true
+    runtime.journeyManualPending = false
+    runtime.journeyLastClaimAt = now
+    runtime.journeyNextClaimAt = now + 2.5
+    runtime.journeyStatus = available > 0 and string.format("claiming %d reward%s", available, available == 1 and "" or "s") or "claiming available rewards"
+
+    local fired = pcall(function()
+        JourneyEvent:FireServer("ClaimAll", nil, seasonId)
+    end)
+
+    if not fired then
+        runtime.journeyClaimInFlight = false
+        runtime.journeyStatus = "claim request failed"
+        runtime.journeyNextClaimAt = now + 1
+        return false
+    end
+
+    task.delay(1.25, function()
+        if runtime.journeyClaimInFlight then
+            runtime.journeyClaimInFlight = false
+            runtime.journeyStatus = "waiting for confirmation"
+            requestJourneyState(true)
+        end
+    end)
+
+    return true
+end
+
+local function getSelectedMapSlot()
+    local selections = SETTINGS.mapVoteSelections or {}
+    local selected = selections[1]
+    if selected and table.find(MAP_VOTE_SLOT_IDS, selected) then
+        return selected
+    end
+    return nil
+end
+
+local function setDebugError(value)
+    runtime.debugLastError = tostring(value or "")
+    runtime.debugLastErrorAt = os.clock()
+end
+
+local function getDebugGui()
+    if runtime.debugGui and runtime.debugGui.Parent and runtime.debugLabel and runtime.debugLabel.Parent then
+        return runtime.debugGui, runtime.debugLabel
+    end
+
+    local playerGui = LocalPlayer:FindFirstChildOfClass("PlayerGui") or LocalPlayer:WaitForChild("PlayerGui", 5)
+    if not playerGui then
+        return nil, nil
+    end
+
+    local old = playerGui:FindFirstChild("CoH_FullDebug")
+    if old then
+        old:Destroy()
+    end
+
+    local gui = Instance.new("ScreenGui")
+    gui.Name = "CoH_FullDebug"
+    gui.ResetOnSpawn = false
+    gui.IgnoreGuiInset = true
+    gui.DisplayOrder = 9999
+    gui.Enabled = false
+    gui.Parent = playerGui
+
+    local frame = Instance.new("Frame")
+    frame.Name = "Panel"
+    frame.Size = UDim2.fromOffset(470, 360)
+    frame.Position = UDim2.fromOffset(10, 70)
+    frame.BackgroundTransparency = 0.12
+    frame.BackgroundColor3 = Color3.fromRGB(10, 14, 22)
+    frame.BorderSizePixel = 0
+    frame.Parent = gui
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = frame
+
+    local label = Instance.new("TextLabel")
+    label.Name = "Status"
+    label.Size = UDim2.new(1, -20, 1, -20)
+    label.Position = UDim2.fromOffset(10, 10)
+    label.BackgroundTransparency = 1
+    label.TextColor3 = Color3.fromRGB(235, 240, 250)
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.TextYAlignment = Enum.TextYAlignment.Top
+    label.Font = Enum.Font.Code
+    label.TextSize = 12
+    label.TextWrapped = false
+    label.Text = "Huss Valley | FULL DEBUG"
+    label.Parent = frame
+
+    runtime.debugGui = gui
+    runtime.debugLabel = label
+    return gui, label
+end
+
+local function updateDebugPanel(now)
+    if not runtime.debugEnabled then
+        if runtime.debugGui then
+            runtime.debugGui.Enabled = false
+        end
+        return
+    end
+
+    local gui, label = getDebugGui()
+    if not gui or not label then
+        return
+    end
+
+    gui.Enabled = true
+
+    local character = getCharacter()
+    local humanoid = getHumanoid()
+    local root = getRoot()
+    local position = root and root.Position or Vector3.zero
+    local goalDistance = runtime.goal and flat(runtime.goal - position).Magnitude or -1
+    local speed = humanoid and humanoid.WalkSpeed or -1
+    local health = humanoid and humanoid.Health or -1
+    local safeA = safezone.a and safezone.a.name or "nil"
+    local safeB = safezone.b and safezone.b.name or "nil"
+    local threat = runtime.threats[1]
+    local errorText = runtime.debugLastError ~= nil and runtime.debugLastError ~= "" and runtime.debugLastError or "none"
+    local errorAge = runtime.debugLastErrorAt > 0 and math.max(0, now - runtime.debugLastErrorAt) or -1
+    local wheelStateAge = runtime.wheelLastStateAt > 0 and math.max(0, now - runtime.wheelLastStateAt) or -1
+    local journeyAge = runtime.journeyLastStateAt > 0 and math.max(0, now - runtime.journeyLastStateAt) or -1
+    local mapAge = runtime.mapVoteLastStateAt > 0 and math.max(0, now - runtime.mapVoteLastStateAt) or -1
+    local selectedMap = getSelectedMapSlot() or "none"
+    local path = runtime.path or Vector3.zero
+
+    label.Text = table.concat({
+        "Huss Valley | FULL DEBUG",
+        string.format("Role=%s | RunState=%s | InMatch=%s | ClientReady=%s", tostring(getRole()), tostring(getRunState()), tostring(LocalPlayer:GetAttribute("InMatch")), tostring(LocalPlayer:GetAttribute("ClientReady"))),
+        string.format("MovementLocked=%s | Ragdolled=%s | GearMotion=%s | HP=%.1f | WalkSpeed=%.1f", tostring(character and character:GetAttribute("MovementLocked")), tostring(character and character:GetAttribute("Ragdolled")), tostring(character and character:GetAttribute("GearMotion")), health, speed),
+        string.format("Position=%.1f, %.1f, %.1f | GoalMode=%s | GoalDistance=%.1f", position.X, position.Y, position.Z, tostring(runtime.goalMode), goalDistance),
+        string.format("SafeA=%s | SafeB=%s | Cached=%s", safeA, safeB, tostring(safezone.cached)),
+        string.format("Route=%s -> %s | Complete=%s | Stuck=%s | EdgeRisk=%s", tostring(runtime.routeStartSide or "none"), tostring(runtime.routeTargetSide or "none"), tostring(runtime.routeComplete), tostring(runtime.stuck), tostring(runtime.edgeRisk)),
+        string.format("Assist=%s | Revive=%s | Gem=%s | SideGap=%s", tostring(runtime.assistMode or "none"), runtime.reviveStarted and "started" or "idle", runtime.gemTarget and runtime.gemTarget.Parent and runtime.gemTarget.Name or "none", runtime.sideGapReason ~= "" and runtime.sideGapReason or "none"),
+        string.format("Threats=%d | Threat0=%s", #runtime.threats, threat and string.format("d=%.1f gap=%.1f t=%.2f risk=%s", threat.distance or -1, threat.interceptGap or -1, threat.interceptTime or -1, tostring(threat.collisionRisk)) or "none"),
+        string.format("Dash=%s | DashCount=%s | Path=%.2f, %.2f", tostring(runtime.dashStatus), tostring(runtime.dashLastCount), path.X, path.Z),
+        string.format("CatcherTarget=%s | Chase=%s | Tackle=%s | Melee=%s", runtime.catcherTarget and runtime.catcherTarget.Name or "none", tostring(SETTINGS.catcherChase), tostring(SETTINGS.autoTackle), tostring(SETTINGS.autoMelee)),
+        string.format("Wheel=%s | Credits=%d | Spins=%d | Spinning=%s | StateAge=%.2fs", tostring(runtime.wheelStatus), math.floor(tonumber(runtime.wheelCredits) or 0), tonumber(runtime.wheelSpinCount) or 0, tostring(runtime.wheelSpinning), wheelStateAge),
+        string.format("Journey=%s | Loaded=%s | Tier=%d | Claims=%d | StateAge=%.2fs", tostring(runtime.journeyStatus), tostring(runtime.journeyLoaded), tonumber(runtime.journeyTier) or 1, tonumber(runtime.journeyClaimCount) or 0, journeyAge),
+        string.format("MapVote=%s | Phase=%s | Selected=%s | StateAge=%.2fs", tostring(runtime.mapVoteStatus), tostring(runtime.mapVotePhase), selectedMap, mapAge),
+        string.format("AutoRun=%s | AutoSpin=%s | AutoClaim=%s | AutoVote=%s", tostring(SETTINGS.runnerEnabled), tostring(SETTINGS.autoSpinWheel), tostring(SETTINGS.autoClaimJourneyRewards), tostring(SETTINGS.autoMapVote)),
+        string.format("Ping=%d ms | LastErrorAge=%.2fs | LastError=%s", math.floor((tonumber(runtime.ping) or 0) * 1000 + 0.5), errorAge, errorText),
+    }, "\n")
+end
+
+
+local function readMapVoteState()
+    if not MapVoteState or not MapVoteState:IsA("StringValue") then
+        runtime.mapVoteOpen = false
+        runtime.mapVotePhase = "Unavailable"
+        return nil
+    end
+
+    local ok, state = pcall(function()
+        return HttpService:JSONDecode(MapVoteState.Value)
+    end)
+    if not ok or type(state) ~= "table" then
+        runtime.mapVoteOpen = false
+        runtime.mapVotePhase = "Waiting"
+        return nil
+    end
+
+    local options = type(state.options) == "table" and state.options or {}
+    local ids = {}
+    for index = 1, math.min(#options, #MAP_VOTE_SLOT_IDS) do
+        local option = options[index]
+        if type(option) == "table" then
+            ids[index] = option.id or option.Id or option.key or option.Key
+        end
+    end
+
+    runtime.mapVoteOptionIds = ids
+    runtime.mapVoteToken = state.token
+    runtime.mapVotePhase = tostring(state.phase or "Waiting")
+    runtime.mapVoteOpen = runtime.mapVotePhase == "Voting"
+    runtime.mapVoteLastStateAt = os.clock()
+    return state
+end
+
+local function mapVoteOnce(manual)
+    if not SETTINGS.autoMapVote and not manual then
+        runtime.mapVoteStatus = "disabled"
+        return false
+    end
+
+    if LocalPlayer:GetAttribute("InMatch") == true then
+        runtime.mapVoteStatus = "waiting for lobby"
+        return false
+    end
+
+    if LocalPlayer:GetAttribute("ClientReady") ~= true then
+        runtime.mapVoteStatus = "waiting for client"
+        return false
+    end
+
+    if LocalPlayer:GetAttribute("AFK") == true then
+        runtime.mapVoteStatus = "waiting - AFK"
+        return false
+    end
+
+    if Session:GetAttribute("GlobalPaused") == true then
+        runtime.mapVoteStatus = "paused"
+        return false
+    end
+
+    local state = readMapVoteState()
+    if not state or runtime.mapVotePhase ~= "Voting" then
+        runtime.mapVoteStatus = "waiting for vote"
+        return false
+    end
+
+    local selected = getSelectedMapSlot()
+    if not selected then
+        runtime.mapVoteStatus = "choose Map 1, Map 2, or Map 3"
+        return false
+    end
+
+    local index = table.find(MAP_VOTE_SLOT_IDS, selected)
+    local optionId = index and runtime.mapVoteOptionIds[index]
+    if optionId == nil then
+        runtime.mapVoteStatus = selected .. " is unavailable"
+        return false
+    end
+
+    local token = runtime.mapVoteToken
+    if token == nil then
+        runtime.mapVoteStatus = "vote token unavailable"
+        return false
+    end
+
+    local votes = type(state.votes) == "table" and state.votes or nil
+    local currentVote = votes and (votes[tostring(LocalPlayer.UserId)] or votes[LocalPlayer.UserId]) or nil
+    if currentVote == optionId then
+        runtime.mapVoteStatus = selected .. " already selected"
+        return true
+    end
+
+    local now = os.clock()
+    if now - runtime.mapVoteLastActionAt < 0.75 then
+        return false
+    end
+
+    local fired = pcall(function()
+        MapVoteEvent:FireServer("Vote", optionId, token)
+    end)
+
+    if not fired then
+        runtime.mapVoteStatus = "vote request failed"
+        return false
+    end
+
+    runtime.mapVoteLastActionAt = now
+    runtime.mapVoteStatus = selected .. " vote sent"
+    if SETTINGS.mapVoteAnnounce then
+        pcall(function()
+            WindUI:Notify({
+                Title = "Map Vote",
+                Content = selected .. " selected.",
+                Duration = 2.5,
+                Icon = "map",
+            })
+        end)
+    end
+    return true
+end
+
+local function wheelServerNow()
+    local ok, value = pcall(function()
+        return workspace:GetServerTimeNow()
+    end)
+    if ok and type(value) == "number" then
+        return value
+    end
+    return os.time()
+end
+
+local function wheelCooldownRemaining()
+    local nextFreeAt = tonumber(runtime.wheelNextFreeAt) or 0
+    if nextFreeAt <= 0 then
+        return 0
+    end
+    if nextFreeAt < 100000000 then
+        return math.max(0, nextFreeAt)
+    end
+    return math.max(0, nextFreeAt - wheelServerNow())
+end
+
+local function wheelUpdateStatus(status)
+    runtime.wheelStatus = tostring(status or runtime.wheelStatus or "waiting")
+    runtime.wheelStatusAt = os.clock()
+end
+
+local function wheelRequestState(now, force)
+    if not force and now - runtime.wheelStateRequestAt < 1.25 then
+        return false
+    end
+
+    runtime.wheelStateRequestAt = now
+    local ok = pcall(function()
+        SpinWheelEvent:FireServer("State")
+    end)
+    runtime.wheelEventReady = ok
+
+    if ok then
+        return true
+    end
+
+    wheelUpdateStatus("state request failed")
+    return false
+end
+
+local function wheelApplyState(payload)
+    if type(payload) ~= "table" then
+        return
+    end
+    runtime.wheelCredits = tonumber(payload.credits) or 0
+    runtime.wheelNextFreeAt = tonumber(payload.nextFreeAt) or 0
+    runtime.wheelPurchasesAvailable = payload.purchasesAvailable == true
+    runtime.wheelDiscountAvailable = payload.discountAvailable == true
+end
+
+local function wheelCanSpinNow(manual)
+    if not SETTINGS.autoSpinWheel and not manual then
+        return false, "disabled"
+    end
+
+    if LocalPlayer:GetAttribute("InMatch") == true then
+        return false, "cannot spin in match"
+    end
+
+    if runtime.wheelSpinning then
+        return false, "spinning"
+    end
+
+    local now = os.clock()
+    local nextAttempt = tonumber(runtime.wheelNextAttemptAt) or -math.huge
+    if now < nextAttempt then
+        return false, string.format("cooldown %.1fs", nextAttempt - now)
+    end
+
+    local minimum = math.max(1, math.floor(tonumber(SETTINGS.wheelMinimumCredits) or 1))
+    local credits = math.floor(tonumber(runtime.wheelCredits) or 0)
+    if credits < minimum then
+        return false, string.format("not enough credits (%d/%d)", credits, minimum)
+    end
+
+    return true, "ready"
+end
+
+local function wheelNotify(title, content, icon)
+    if not SETTINGS.wheelAnnounce then
+        return
+    end
+    pcall(function()
+        WindUI:Notify({
+            Title = title,
+            Content = content,
+            Duration = 2.5,
+            Icon = icon or "circle-dot",
+        })
+    end)
+end
+
+local function wheelSpinOnce(manual)
+    local allowed, reason = wheelCanSpinNow(manual)
+    if not allowed then
+        wheelUpdateStatus(reason)
+        return false
+    end
+
+    local now = os.clock()
+    local delay = math.clamp(tonumber(SETTINGS.wheelSpinInterval) or 6, 5.5, 30)
+    runtime.wheelSpinning = true
+    runtime.wheelSpinRequestAt = now
+    runtime.wheelNextAttemptAt = now + delay
+    runtime.wheelActionAt = now
+    runtime.wheelSpinCount += 1
+    wheelUpdateStatus("spin requested")
+
+    local fired = pcall(function()
+        SpinWheelEvent:FireServer("Spin")
+    end)
+
+    if not fired then
+        runtime.wheelSpinning = false
+        runtime.wheelNextAttemptAt = now + 1
+        wheelUpdateStatus("spin request failed")
+        return false
+    end
+
+    if manual then
+        wheelNotify("Wheel", "Spin request sent.", "zap")
+    else
+        wheelNotify("Auto Spin", string.format("Spin #%d fired.", runtime.wheelSpinCount), "circle-dot")
+    end
+
+    task.delay(0.85, function()
+        runtime.wheelSpinning = false
+        wheelRequestState(os.clock(), true)
+    end)
+
+    return true
+end
+
+local function autoSpinWheelStep(now)
+    if not SETTINGS.autoSpinWheel then
+        wheelUpdateStatus("disabled")
+        return
+    end
+
+    wheelRequestState(now, false)
+
+    local allowed, reason = wheelCanSpinNow(false)
+    if allowed then
+        wheelSpinOnce(false)
+        return
+    end
+
+    wheelUpdateStatus(reason)
+end
+
 local function utilityStep(now)
     if now - runtime.utilityTick < 0.25 then
         return
     end
     runtime.utilityTick = now
+    if SETTINGS.autoSpinWheel then
+        autoSpinWheelStep(now)
+    end
     if SETTINGS.showThreats or SETTINGS.showThreatUtility then
         if isRunnerActive() then
             local root = getRoot()
@@ -2711,11 +3755,6 @@ RescueEvent.OnClientEvent:Connect(function(kind, id)
 end)
 
 LocalPlayer.CharacterAdded:Connect(function()
-    runtime.debugError = ""
-    runtime.debugFrames = 0
-    runtime.debugMoveCalls = 0
-    runtime.debugLastStep = -math.huge
-    runtime.debugLastMove = -math.huge
     runtime.profile = nil
     runtime.profileRole = nil
     runtime.lastMovePosition = nil
@@ -2738,8 +3777,31 @@ LocalPlayer.CharacterAdded:Connect(function()
     runtime.catchers = {}
     runtime.catcherTargets = {}
     runtime.dashAt = -math.huge
+    runtime.dashStatus = "idle"
+    runtime.dashLastRequestAt = -math.huge
+    runtime.dashLastCount = nil
+    runtime.edgeRecoveryDirection = Vector3.zero
+    runtime.edgeRecoveryUntil = -math.huge
+    runtime.stuckRecoveryDirection = Vector3.zero
+    runtime.stuckRecoveryUntil = -math.huge
     runtime.armoryAt = -math.huge
     runtime.armory = {loaded = false, abilities = {}}
+    runtime.wheelScanAt = -math.huge
+    runtime.wheelActionAt = -math.huge
+    runtime.wheelStatus = SETTINGS.autoSpinWheel and "starting" or "disabled"
+    runtime.wheelLastButton = nil
+    runtime.wheelCredits = 0
+    runtime.wheelNextFreeAt = 0
+    runtime.wheelPurchasesAvailable = false
+    runtime.wheelDiscountAvailable = false
+    runtime.wheelStateRequestAt = -math.huge
+    runtime.wheelSpinRequestAt = -math.huge
+    runtime.wheelNextAttemptAt = -math.huge
+    runtime.wheelEventReady = false
+    runtime.wheelSpinning = false
+    runtime.wheelLastStateAt = -math.huge
+    runtime.wheelStatusAt = -math.huge
+    runtime.wheelMinimumCredits = 1
 end)
 
 do
@@ -2777,7 +3839,133 @@ task.spawn(function()
     end)
 end)
 
-local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+SpinWheelEvent.OnClientEvent:Connect(function(kind, payload)
+    if kind == "State" and type(payload) == "table" then
+        wheelApplyState(payload)
+        runtime.wheelLastStateAt = os.clock()
+        if payload.result or payload.message then
+            runtime.wheelSpinning = false
+        end
+        if SETTINGS.autoSpinWheel then
+            local credits = tonumber(runtime.wheelCredits) or 0
+            local minimum = math.max(1, math.floor(tonumber(SETTINGS.wheelMinimumCredits) or 1))
+            if credits >= minimum then
+                wheelUpdateStatus("ready")
+            else
+                wheelUpdateStatus(string.format("waiting - credits %d/%d", math.floor(credits), minimum))
+            end
+            task.defer(function()
+                if SETTINGS.autoSpinWheel and LocalPlayer:GetAttribute("InMatch") ~= true then
+                    autoSpinWheelStep(os.clock())
+                end
+            end)
+        end
+        return
+    end
+
+    if kind == "PromptProduct" then
+        runtime.wheelPurchasesAvailable = true
+        wheelUpdateStatus("free credits unavailable")
+        return
+    end
+
+    if type(kind) == "table" and payload == nil then
+        wheelApplyState(kind)
+        if SETTINGS.autoSpinWheel then
+            wheelUpdateStatus("state refreshed")
+            task.defer(function()
+                autoSpinWheelStep(os.clock())
+            end)
+        end
+    end
+end)
+
+local function isLobbyForAFKOverride()
+    return SETTINGS.disableBuiltinAFK and LocalPlayer:GetAttribute("InMatch") ~= true
+end
+
+local function forceBuiltinAFKOff(reason)
+    if not isLobbyForAFKOverride() then
+        runtime.afkOverrideInLobby = false
+        if not SETTINGS.disableBuiltinAFK then
+            runtime.afkOverrideStatus = "disabled"
+        end
+        return false
+    end
+
+    runtime.afkOverrideInLobby = true
+
+    local now = os.clock()
+    if reason ~= "attribute" and now - runtime.afkOverrideLastRequestAt < runtime.afkOverrideRequestInterval then
+        return false
+    end
+
+    local ok, err = pcall(function()
+        PlayerPreferences:FireServer("SetAFK", false)
+    end)
+
+    runtime.afkOverrideLastRequestAt = now
+
+    if ok then
+        runtime.afkOverrideRequestCount = (runtime.afkOverrideRequestCount or 0) + 1
+        runtime.afkOverrideStatus = "AFK OFF"
+        return true
+    end
+
+    runtime.afkOverrideStatus = "request failed"
+    return false
+end
+
+LocalPlayer:GetAttributeChangedSignal("AFK"):Connect(function()
+    if not SETTINGS.disableBuiltinAFK then
+        runtime.afkOverrideStatus = "disabled"
+        return
+    end
+
+    if LocalPlayer:GetAttribute("InMatch") == true then
+        runtime.afkOverrideInLobby = false
+        runtime.afkOverrideStatus = "in match"
+        return
+    end
+
+    if LocalPlayer:GetAttribute("AFK") == true then
+        forceBuiltinAFKOff("attribute")
+    else
+        runtime.afkOverrideStatus = "AFK OFF confirmed"
+    end
+end)
+
+LocalPlayer:GetAttributeChangedSignal("InMatch"):Connect(function()
+    if not SETTINGS.disableBuiltinAFK then
+        return
+    end
+
+    if LocalPlayer:GetAttribute("InMatch") == true then
+        runtime.afkOverrideInLobby = false
+        runtime.afkOverrideStatus = "in match"
+    else
+        runtime.afkOverrideInLobby = true
+        runtime.afkOverrideLastRequestAt = -math.huge
+        forceBuiltinAFKOff("lobby")
+    end
+end)
+
+task.spawn(function()
+    while LocalPlayer.Parent do
+        task.wait(0.5)
+        if SETTINGS.disableBuiltinAFK then
+            if LocalPlayer:GetAttribute("InMatch") == true then
+                runtime.afkOverrideInLobby = false
+                runtime.afkOverrideStatus = "in match"
+            else
+                runtime.afkOverrideInLobby = true
+                forceBuiltinAFKOff("poll")
+            end
+        end
+    end
+end)
+
+WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
 local Window = WindUI:CreateWindow({
     Title = "Huss Valley",
@@ -2794,43 +3982,30 @@ Window:Tag({Title = "Huss Valley", Color = Color3.fromRGB(110, 190, 255)})
 
 local RunnerTab = Window:Tab({Title = "Runner", Icon = "footprints"})
 
-RunnerTab:Section({Title = "Runner Automation"})
+local RunnerStatusParagraph = RunnerTab:Paragraph({
+    Title = "Runner Status",
+    Desc = "Role: Lobby\nState: Idle\nGoal: None",
+})
+
+RunnerTab:Section({Title = "Movement"})
 
 RunnerTab:Toggle({
     Title = "Auto Run",
-    Desc = "Automatically move between the two Safe Zones.",
+    Desc = "Automatically travel between Safe Zones with threat and edge checks.",
     Icon = "play",
     Type = "Checkbox",
-    Value = false,
+    Value = true,
     Callback = function(v)
-        SETTINGS.runnerEnabled = v
-    end,
-})
-
-RunnerTab:Dropdown({
-    Title = "Runner Strategy",
-    Desc = "Hero keeps the route focused on the opposite Safe Zone. Chicken becomes more conservative near Catchers.",
-    Values = {"Hero", "Chicken"},
-    Value = "Hero",
-    Multi = false,
-    Callback = function(v)
-        if type(v) == "table" then
-            v = v[1]
+        SETTINGS.runnerEnabled = v == true
+        if not SETTINGS.runnerEnabled then
+            runtime.path = Vector3.zero
+            runtime.goal = nil
+            runtime.assistMode = nil
+            runtime.assistTarget = nil
+            runtime.sideGapDirection = Vector3.zero
+            runtime.sideGapUntil = -math.huge
+            cancelRevive()
         end
-        if v == "Hero" or v == "Chicken" then
-            SETTINGS.strategy = v
-        end
-    end,
-})
-
-RunnerTab:Toggle({
-    Title = "Use Hero / Chicken Strategy",
-    Desc = "Enable the selected strategy while choosing the safest route across the field.",
-    Icon = "shuffle",
-    Type = "Checkbox",
-    Value = false,
-    Callback = function(v)
-        SETTINGS.strategyEnabled = v
     end,
 })
 
@@ -2841,20 +4016,34 @@ RunnerTab:Toggle({
     Type = "Checkbox",
     Value = true,
     Callback = function(v)
-        SETTINGS.autoRevive = v
+        SETTINGS.autoRevive = v == true
         if not v then
             cancelRevive()
         end
     end,
 })
 
-RunnerTab:Slider({
-    Title = "Runner Speed",
-    Desc = "Movement speed multiplier used while Auto Run is active.",
-    Step = 0.05,
-    Value = {Min = 1.0, Max = 2.5, Default = 2.5},
+RunnerTab:Toggle({
+    Title = "Runner Speed Override",
+    Desc = "Multiply the game's current Runner movement speed without replacing its acceleration or dash system.",
+    Icon = "gauge",
+    Type = "Checkbox",
+    Value = false,
     Callback = function(v)
-        SETTINGS.speedMultiplier = v
+        SETTINGS.customSpeed = v == true
+        if not SETTINGS.customSpeed then
+            restoreNativeWalkSpeed()
+        end
+    end,
+})
+
+RunnerTab:Slider({
+    Title = "Runner Speed Multiplier",
+    Desc = "1.0x keeps the native speed; maximum is 2.0x.",
+    Step = 0.05,
+    Value = {Min = 1.0, Max = 2.0, Default = 1.0},
+    Callback = function(v)
+        SETTINGS.speedMultiplier = math.clamp(tonumber(v) or 1, 1, 2)
     end,
 })
 
@@ -2867,7 +4056,7 @@ RunnerTab:Toggle({
     Type = "Checkbox",
     Value = true,
     Callback = function(v)
-        SETTINGS.reviveBeforeGems = v
+        SETTINGS.reviveBeforeGems = v == true
     end,
 })
 
@@ -2878,7 +4067,7 @@ RunnerTab:Toggle({
     Type = "Checkbox",
     Value = true,
     Callback = function(v)
-        SETTINGS.autoGems = v
+        SETTINGS.autoGems = v == true
         if not v then
             runtime.gemTarget = nil
         end
@@ -2892,7 +4081,7 @@ RunnerTab:Toggle({
     Type = "Checkbox",
     Value = true,
     Callback = function(v)
-        SETTINGS.avoidCatchers = v
+        SETTINGS.avoidCatchers = v == true
     end,
 })
 
@@ -2903,27 +4092,27 @@ RunnerTab:Toggle({
     Type = "Checkbox",
     Value = true,
     Callback = function(v)
-        SETTINGS.autoDash = v
+        SETTINGS.autoDash = v == true
     end,
 })
 
 RunnerTab:Slider({
-    Title = "Catcher Prediction",
-    Desc = "How far ahead the Runner predicts Catcher movement.",
+    Title = "Runner Threat Prediction",
+    Desc = "How far ahead Catcher movement is predicted for Runner avoidance.",
     Step = 0.05,
-    Value = {Min = 0.25, Max = 1.2, Default = 0.75},
+    Value = {Min = 0.25, Max = 1.1, Default = 0.65},
     Callback = function(v)
-        SETTINGS.predictionTime = v
+        SETTINGS.predictionTime = math.clamp(tonumber(v) or 0.65, 0.25, 1.1)
     end,
 })
 
 RunnerTab:Slider({
-    Title = "Panic Distance",
-    Desc = "Distance where the Runner switches to stronger avoidance and earlier dashes.",
+    Title = "Emergency Threat Distance",
+    Desc = "Distance at which emergency avoidance becomes more aggressive.",
     Step = 1,
-    Value = {Min = 8, Max = 35, Default = 22},
+    Value = {Min = 8, Max = 25, Default = 15},
     Callback = function(v)
-        SETTINGS.panicDistance = v
+        SETTINGS.panicDistance = math.clamp(tonumber(v) or 15, 8, 25)
     end,
 })
 
@@ -2936,7 +4125,7 @@ RunnerTab:Toggle({
     Type = "Checkbox",
     Value = true,
     Callback = function(v)
-        SETTINGS.smoothMovement = v
+        SETTINGS.smoothMovement = v == true
     end,
 })
 
@@ -2947,23 +4136,28 @@ RunnerTab:Toggle({
     Type = "Checkbox",
     Value = true,
     Callback = function(v)
-        SETTINGS.emergencySafeZone = v
+        SETTINGS.emergencySafeZone = v == true
     end,
 })
 
 RunnerTab:Slider({
     Title = "Avoidance Strength",
-    Desc = "Higher values make the Runner give Catchers more space.",
+    Desc = "How strongly the route moves away from projected Catcher paths.",
     Step = 0.1,
     Value = {Min = 0.5, Max = 2.5, Default = 1.8},
     Callback = function(v)
-        SETTINGS.avoidStrength = v
+        SETTINGS.avoidStrength = math.clamp(tonumber(v) or 1.8, 0.5, 2.5)
     end,
 })
 
 local CatcherTab = Window:Tab({Title = "Catcher", Icon = "crosshair"})
 
-CatcherTab:Section({Title = "Catcher Automation"})
+local CatcherStatusParagraph = CatcherTab:Paragraph({
+    Title = "Catcher Status",
+    Desc = "Role: Lobby\nState: Idle\nTarget: None",
+})
+
+CatcherTab:Section({Title = "Targeting and Combat"})
 
 CatcherTab:Toggle({
     Title = "Auto Chase",
@@ -2972,13 +4166,17 @@ CatcherTab:Toggle({
     Type = "Checkbox",
     Value = true,
     Callback = function(v)
-        SETTINGS.catcherChase = v
+        SETTINGS.catcherChase = v == true
+        if not SETTINGS.catcherChase then
+            runtime.catcherTarget = nil
+            runtime.catcherPath = Vector3.zero
+        end
     end,
 })
 
 CatcherTab:Dropdown({
     Title = "Attack Priority",
-    Desc = "Smart uses tackle for moving Runners and melee for closer stationary Runners.",
+    Desc = "Choose whether Smart, Tackle, or Melee is preferred when attacking.",
     Values = {"Smart", "Tackle First", "Melee First"},
     Value = "Smart",
     Multi = false,
@@ -2999,7 +4197,7 @@ CatcherTab:Toggle({
     Type = "Checkbox",
     Value = true,
     Callback = function(v)
-        SETTINGS.smartPriority = v
+        SETTINGS.smartPriority = v == true
     end,
 })
 
@@ -3010,7 +4208,10 @@ CatcherTab:Toggle({
     Type = "Checkbox",
     Value = true,
     Callback = function(v)
-        SETTINGS.autoTackle = v
+        SETTINGS.autoTackle = v == true
+        if not SETTINGS.autoTackle then
+            runtime.lastTackle = -math.huge
+        end
     end,
 })
 
@@ -3020,7 +4221,7 @@ CatcherTab:Slider({
     Step = 0.5,
     Value = {Min = 5, Max = 25, Default = 12},
     Callback = function(v)
-        SETTINGS.tackleRange = v
+        SETTINGS.tackleRange = math.clamp(tonumber(v) or 12, 5, 25)
     end,
 })
 
@@ -3031,7 +4232,10 @@ CatcherTab:Toggle({
     Type = "Checkbox",
     Value = true,
     Callback = function(v)
-        SETTINGS.autoMelee = v
+        SETTINGS.autoMelee = v == true
+        if not SETTINGS.autoMelee then
+            runtime.lastMelee = -math.huge
+        end
     end,
 })
 
@@ -3041,40 +4245,43 @@ CatcherTab:Slider({
     Step = 0.5,
     Value = {Min = 3, Max = 15, Default = 9},
     Callback = function(v)
-        SETTINGS.meleeRange = v
+        SETTINGS.meleeRange = math.clamp(tonumber(v) or 9, 3, 15)
     end,
 })
 
 CatcherTab:Slider({
-    Title = "Prediction Time",
-    Desc = "How far ahead moving Runner positions are predicted.",
+    Title = "Target Prediction",
+    Desc = "How far ahead the Catcher predicts the selected Runner.",
     Step = 0.05,
     Value = {Min = 0.1, Max = 1.0, Default = 0.45},
     Callback = function(v)
-        SETTINGS.catcherPrediction = v
+        SETTINGS.catcherPrediction = math.clamp(tonumber(v) or 0.45, 0.1, 1.0)
     end,
 })
 
-CatcherTab:Section({Title = "Catcher Movement"})
+CatcherTab:Section({Title = "Movement"})
 
 CatcherTab:Toggle({
-    Title = "Custom Catcher Speed",
-    Desc = "Use the speed multiplier below instead of the game's normal Catcher speed.",
-    Icon = "fast-forward",
+    Title = "Catcher Speed Override",
+    Desc = "Multiply the game's current Catcher movement speed without replacing its acceleration or dash system.",
+    Icon = "gauge",
     Type = "Checkbox",
-    Value = true,
+    Value = false,
     Callback = function(v)
-        SETTINGS.catcherCustomSpeed = v
+        SETTINGS.catcherCustomSpeed = v == true
+        if not SETTINGS.catcherCustomSpeed then
+            restoreNativeWalkSpeed()
+        end
     end,
 })
 
 CatcherTab:Slider({
-    Title = "Catcher Speed",
-    Desc = "Movement speed multiplier used while Auto Chase is active.",
+    Title = "Catcher Speed Multiplier",
+    Desc = "1.0x keeps the native speed; maximum is 2.0x.",
     Step = 0.05,
-    Value = {Min = 1.0, Max = 2.5, Default = 2.5},
+    Value = {Min = 1.0, Max = 2.0, Default = 1.0},
     Callback = function(v)
-        SETTINGS.catcherSpeedMultiplier = v
+        SETTINGS.catcherSpeedMultiplier = math.clamp(tonumber(v) or 1, 1, 2)
     end,
 })
 
@@ -3085,33 +4292,414 @@ CatcherTab:Toggle({
     Type = "Checkbox",
     Value = true,
     Callback = function(v)
-        SETTINGS.smoothTurn = v
+        SETTINGS.smoothTurn = v == true
     end,
 })
 
 CatcherTab:Slider({
-    Title = "Turn Speed",
-    Desc = "How quickly the Catcher rotates toward a target.",
+    Title = "Turn Response",
+    Desc = "How quickly the Catcher turns toward the predicted target.",
     Step = 1,
     Value = {Min = 5, Max = 30, Default = 14},
     Callback = function(v)
-        SETTINGS.turnRateCatcher = v
+        SETTINGS.turnRateCatcher = math.clamp(tonumber(v) or 14, 5, 30)
     end,
 })
+
+local WheelTab = Window:Tab({Title = "Wheel", Icon = "rotate-cw"})
+
+WheelTab:Section({Title = "Status"})
+
+local WheelStatusParagraph = WheelTab:Paragraph({
+    Title = "Wheel Ready",
+    Desc = "Credits: 0 | Spins: 0\nFree spin: Ready | Match: No | Spinning: No",
+})
+
+local function updateWheelStatusUI()
+    local credits = math.floor(tonumber(runtime.wheelCredits) or 0)
+    local minimum = math.max(1, math.floor(tonumber(SETTINGS.wheelMinimumCredits) or 1))
+    local free = wheelCooldownRemaining()
+    local freeText = free > 0 and string.format("%d:%02d", math.floor(free / 60), math.floor(free % 60)) or "ready"
+    local stateAge = runtime.wheelLastStateAt > 0 and math.max(0, os.clock() - runtime.wheelLastStateAt) or math.huge
+    local stateText = stateAge < math.huge and string.format("%.1fs ago", stateAge) or "not received"
+    local title = string.format("%s | Credits %d/%d", tostring(runtime.wheelStatus or "waiting"), credits, minimum)
+    local desc = string.format(
+        "Spins: %d | Free spin: %s\nMatch: %s | Spinning: %s | State: %s",
+        tonumber(runtime.wheelSpinCount) or 0,
+        freeText,
+        LocalPlayer:GetAttribute("InMatch") == true and "Yes" or "No",
+        runtime.wheelSpinning and "Yes" or "No",
+        stateText
+    )
+    pcall(function()
+        WheelStatusParagraph:SetTitle(title)
+        WheelStatusParagraph:SetDesc(desc)
+    end)
+end
+
+WheelTab:Section({Title = "Automatic Spin"})
+
+WheelTab:Toggle({
+    Title = "Enable Auto Spin",
+    Desc = "Automatically spin when you have enough credits and are in the lobby.",
+    Icon = "play",
+    Type = "Checkbox",
+    Value = false,
+    Callback = function(v)
+        SETTINGS.autoSpinWheel = v == true
+        runtime.wheelSpinning = false
+        runtime.wheelSpinRequestAt = -math.huge
+        runtime.wheelNextAttemptAt = -math.huge
+        if SETTINGS.autoSpinWheel then
+            runtime.wheelStatus = "refreshing state"
+            wheelRequestState(os.clock(), true)
+            pcall(function()
+                WindUI:Notify({Title = "Auto Spin", Content = "Started.", Duration = 2, Icon = "check"})
+            end)
+        else
+            runtime.wheelStatus = "disabled"
+            pcall(function()
+                WindUI:Notify({Title = "Auto Spin", Content = "Stopped.", Duration = 2, Icon = "pause"})
+            end)
+        end
+        updateWheelStatusUI()
+    end,
+})
+
+WheelTab:Slider({
+    Title = "Delay Between Spins",
+    Desc = "Seconds to wait between automatic spin requests.",
+    Step = 0.5,
+    Value = {Min = 5.5, Max = 30, Default = 6},
+    Callback = function(v)
+        SETTINGS.wheelSpinInterval = math.clamp(tonumber(v) or 6, 5.5, 30)
+        updateWheelStatusUI()
+    end,
+})
+
+WheelTab:Slider({
+    Title = "Minimum Credits",
+    Desc = "Do not spin unless the wheel has at least this many credits.",
+    Step = 1,
+    Value = {Min = 1, Max = 50, Default = 1},
+    Callback = function(v)
+        SETTINGS.wheelMinimumCredits = math.max(1, math.floor(tonumber(v) or 1))
+        runtime.wheelMinimumCredits = SETTINGS.wheelMinimumCredits
+        updateWheelStatusUI()
+    end,
+})
+
+WheelTab:Toggle({
+    Title = "Spin Notifications",
+    Desc = "Show a notification when an automatic spin is sent.",
+    Icon = "bell",
+    Type = "Checkbox",
+    Value = true,
+    Callback = function(v)
+        SETTINGS.wheelAnnounce = v == true
+    end,
+})
+
+WheelTab:Divider()
+WheelTab:Section({Title = "Manual Controls"})
+
+WheelTab:Button({
+    Title = "Spin Once Now",
+    Desc = "Send one normal Spin request when the wheel is available.",
+    Icon = "zap",
+    Callback = function()
+        task.spawn(function()
+            wheelRequestState(os.clock(), true)
+            task.wait(0.1)
+            wheelSpinOnce(true)
+            updateWheelStatusUI()
+        end)
+    end,
+})
+
+WheelTab:Button({
+    Title = "Refresh Wheel State",
+    Desc = "Request the latest credits and free-spin timer from the game.",
+    Icon = "refresh-cw",
+    Callback = function()
+        wheelRequestState(os.clock(), true)
+        task.delay(0.2, updateWheelStatusUI)
+    end,
+})
+
+task.spawn(function()
+    while WheelStatusParagraph and WheelStatusParagraph.Parent do
+        task.wait(0.5)
+        if SETTINGS.autoSpinWheel then
+            local allowed, reason = wheelCanSpinNow(false)
+            if runtime.wheelSpinning then
+                runtime.wheelStatus = "spinning"
+            elseif allowed then
+                runtime.wheelStatus = "ready"
+            else
+                runtime.wheelStatus = reason
+            end
+        end
+        updateWheelStatusUI()
+    end
+end)
+
+local JourneyTab = Window:Tab({Title = "Journey", Icon = "gift"})
+JourneyTab:Section({Title = "Rewards"})
+
+local JourneyStatusParagraph = JourneyTab:Paragraph({
+    Title = "Journey Status",
+    Desc = "State: Loading\nAvailable rewards: 0",
+})
+
+JourneyTab:Toggle({
+    Title = "Auto Claim Rewards",
+    Desc = "Automatically claim all unlocked Journey rewards while you are in the lobby.",
+    Icon = "gift",
+    Type = "Checkbox",
+    Value = false,
+    Callback = function(v)
+        SETTINGS.autoClaimJourneyRewards = v == true
+        runtime.journeyClaimInFlight = false
+        runtime.journeyNextClaimAt = -math.huge
+        if SETTINGS.autoClaimJourneyRewards then
+            runtime.journeyStatus = "checking rewards"
+            requestJourneyState(true)
+        else
+            runtime.journeyManualPending = false
+            runtime.journeyStatus = "disabled"
+        end
+    end,
+})
+
+JourneyTab:Toggle({
+    Title = "Announce Claims",
+    Desc = "Show a notification after Journey rewards are claimed.",
+    Icon = "bell",
+    Type = "Checkbox",
+    Value = true,
+    Callback = function(v)
+        SETTINGS.journeyClaimAnnounce = v == true
+    end,
+})
+
+JourneyTab:Button({
+    Title = "Claim Rewards Now",
+    Desc = "Claim all currently unlocked rewards once for the current season.",
+    Icon = "gift",
+    Callback = function()
+        journeyClaimOnce(true)
+    end,
+})
+
+JourneyEvent.OnClientEvent:Connect(function(action, data)
+    if action ~= "State" or type(data) ~= "table" then
+        return
+    end
+
+    local seasonId = data.seasonId or JourneyConfig.SeasonId
+    if JourneyConfig.SeasonId and seasonId ~= JourneyConfig.SeasonId then
+        return
+    end
+
+    local wasClaiming = runtime.journeyClaimInFlight
+    runtime.journeyLoaded = data.loaded == true
+    runtime.journeySeasonId = seasonId
+    runtime.journeyTier = tonumber(data.tier) or 1
+    runtime.journeyPremium = data.premium == true
+    runtime.journeyClaims = type(data.claims) == "table" and data.claims or {}
+    runtime.journeyLastStateAt = os.clock()
+
+    if wasClaiming then
+        runtime.journeyClaimInFlight = false
+        runtime.journeyClaimCount += 1
+        runtime.journeyLastClaimResultAt = os.clock()
+    end
+
+    if data.message and tostring(data.message) ~= "" then
+        runtime.journeyStatus = tostring(data.message)
+    elseif runtime.journeyLoaded then
+        local remaining = journeyClaimableCount()
+        runtime.journeyStatus = remaining > 0 and string.format("%d reward%s available", remaining, remaining == 1 and "" or "s") or "ready"
+    else
+        runtime.journeyStatus = "loading journey state"
+    end
+
+    if (SETTINGS.autoClaimJourneyRewards or runtime.journeyManualPending) and runtime.journeyLoaded and LocalPlayer:GetAttribute("InMatch") ~= true and not runtime.journeyClaimInFlight then
+        local remaining = journeyClaimableCount()
+        if remaining > 0 or runtime.journeyManualPending then
+            local manualPending = runtime.journeyManualPending == true
+            task.delay(0.15, function()
+                if (SETTINGS.autoClaimJourneyRewards or manualPending) and LocalPlayer:GetAttribute("InMatch") ~= true then
+                    journeyClaimOnce(manualPending)
+                end
+            end)
+        end
+    end
+end)
+
+task.spawn(function()
+    requestJourneyState(true)
+    while task.wait(1.5) do
+        if LocalPlayer:GetAttribute("InMatch") ~= true then
+            requestJourneyState(false)
+            if SETTINGS.autoClaimJourneyRewards and runtime.journeyLoaded and not runtime.journeyClaimInFlight then
+                journeyClaimOnce(false)
+            end
+        end
+    end
+end)
+
+local function updateRoleStatusUI()
+    local role = getRole()
+    local state = getRunState()
+    local goal = runtime.goalMode or "None"
+    local assist = runtime.assistMode or "None"
+    local target = runtime.catcherTarget and runtime.catcherTarget.Name or "None"
+    pcall(function()
+        RunnerStatusParagraph:SetTitle("Runner: " .. tostring(role))
+        RunnerStatusParagraph:SetDesc(string.format("State: %s\nGoal: %s | Assist: %s", tostring(state), tostring(goal), tostring(assist)))
+        CatcherStatusParagraph:SetTitle("Catcher: " .. tostring(role))
+        CatcherStatusParagraph:SetDesc(string.format("State: %s\nTarget: %s", tostring(state), tostring(target)))
+    end)
+end
+
+task.spawn(function()
+    while RunnerStatusParagraph and RunnerStatusParagraph.Parent do
+        task.wait(0.35)
+        updateRoleStatusUI()
+    end
+end)
+
+local MapVoteTab = Window:Tab({Title = "Map Vote", Icon = "map"})
+
+MapVoteTab:Section({Title = "Voting"})
+
+local MapVoteStatusParagraph = MapVoteTab:Paragraph({
+    Title = "Map Vote",
+    Desc = "Phase: Waiting\nSelection: Map 1\nStatus: Ready",
+})
+
+MapVoteDropdown = MapVoteTab:Dropdown({
+    Title = "Preferred Map",
+    Desc = "Choose Map 1, Map 2, or Map 3.",
+    Values = MAP_VOTE_SLOT_IDS,
+    Value = MAP_VOTE_SLOT_IDS[1],
+    Multi = false,
+    AllowNone = false,
+    SearchBarEnabled = false,
+    Callback = function(value)
+        local selected = value
+        if type(value) == "table" then
+            selected = value[1] or value.Title or value.Name or value.Value
+        end
+        selected = tostring(selected or "")
+        if table.find(MAP_VOTE_SLOT_IDS, selected) then
+            SETTINGS.mapVoteSelections = {selected}
+            runtime.mapVoteStatus = selected .. " selected"
+            if SETTINGS.autoMapVote then
+                task.defer(function()
+                    mapVoteOnce(false)
+                end)
+            end
+        end
+    end,
+})
+
+SETTINGS.mapVoteSelections = {MAP_VOTE_SLOT_IDS[1]}
+
+local function updateMapVoteStatusUI()
+    local selected = getSelectedMapSlot() or "None"
+    local phase = runtime.mapVotePhase or "Waiting"
+    local status = runtime.mapVoteStatus or "ready"
+    pcall(function()
+        MapVoteStatusParagraph:SetTitle("Map Vote: " .. phase)
+        MapVoteStatusParagraph:SetDesc(string.format("Selection: %s\nStatus: %s", selected, status))
+    end)
+end
+
+MapVoteTab:Toggle({
+    Title = "Auto Vote",
+    Desc = "Automatically send the selected Map 1, Map 2, or Map 3 vote when voting begins.",
+    Icon = "check",
+    Type = "Checkbox",
+    Value = false,
+    Callback = function(v)
+        SETTINGS.autoMapVote = v == true
+        runtime.mapVoteLastActionAt = -math.huge
+        if SETTINGS.autoMapVote then
+            runtime.mapVoteStatus = "starting"
+            readMapVoteState()
+            task.defer(function()
+                mapVoteOnce(false)
+            end)
+        else
+            runtime.mapVoteStatus = "disabled"
+        end
+        updateMapVoteStatusUI()
+    end,
+})
+
+MapVoteTab:Toggle({
+    Title = "Vote Notifications",
+    Desc = "Show a notification after a vote is sent.",
+    Icon = "bell",
+    Type = "Checkbox",
+    Value = true,
+    Callback = function(v)
+        SETTINGS.mapVoteAnnounce = v == true
+    end,
+})
+
+MapVoteTab:Button({
+    Title = "Vote Selected Map",
+    Desc = "Send one vote immediately using the game's normal MapVoteEvent.",
+    Icon = "check-check",
+    Callback = function()
+        mapVoteOnce(true)
+        updateMapVoteStatusUI()
+    end,
+})
+
+if MapVoteState and MapVoteState:IsA("StringValue") then
+    MapVoteState.Changed:Connect(function()
+        readMapVoteState()
+        if SETTINGS.autoMapVote then
+            task.defer(function()
+                mapVoteOnce(false)
+            end)
+        end
+        updateMapVoteStatusUI()
+    end)
+end
+
+readMapVoteState()
+updateMapVoteStatusUI()
+
+task.spawn(function()
+    while MapVoteStatusParagraph and MapVoteStatusParagraph.Parent do
+        task.wait(0.5)
+        readMapVoteState()
+        if SETTINGS.autoMapVote then
+            mapVoteOnce(false)
+        end
+        updateMapVoteStatusUI()
+    end
+end)
 
 local UtilitiesTab = Window:Tab({Title = "Utilities", Icon = "wrench"})
 
 UtilitiesTab:Section({Title = "Camera"})
 
 UtilitiesTab:Toggle({
-    Title = "Follow Current Target",
+    Title = "Follow Target",
     Desc = "Smoothly point the camera toward the active Catcher target.",
     Icon = "camera",
     Type = "Checkbox",
     Value = true,
     Callback = function(v)
-        SETTINGS.followTarget = v
-        SETTINGS.cameraFollow = v
+        SETTINGS.followTarget = v == true
+        SETTINGS.cameraFollow = SETTINGS.followTarget
     end,
 })
 
@@ -3125,18 +4713,71 @@ UtilitiesTab:Slider({
     end,
 })
 
+UtilitiesTab:Section({Title = "Lobby"})
+
+local AFKStatusParagraph = UtilitiesTab:Paragraph({
+    Title = "Built-in AFK Status",
+    Desc = "Game AFK: OFF\nLobby: No\nRemote Requests: 0",
+})
+
+UtilitiesTab:Toggle({
+    Title = "Disable Anti AFK Flag",
+    Desc = "Turns off the game's built-in AFK state while you are in the lobby and reapplies it if the game turns AFK back on.",
+    Icon = "user-round-x",
+    Type = "Checkbox",
+    Value = false,
+    Callback = function(v)
+        SETTINGS.disableBuiltinAFK = v
+        runtime.afkOverrideLastRequestAt = -math.huge
+
+        if v then
+            if LocalPlayer:GetAttribute("InMatch") == true then
+                runtime.afkOverrideStatus = "in match"
+                runtime.afkOverrideInLobby = false
+            else
+                runtime.afkOverrideStatus = "starting"
+                forceBuiltinAFKOff("toggle")
+            end
+        else
+            runtime.afkOverrideInLobby = false
+            runtime.afkOverrideStatus = "disabled"
+        end
+    end,
+})
+
+task.spawn(function()
+    while AFKStatusParagraph and AFKStatusParagraph.Parent do
+        task.wait(0.5)
+        pcall(function()
+            local afk = LocalPlayer:GetAttribute("AFK") == true
+            local remoteState = afk and "ON" or "OFF"
+            local status = runtime.afkOverrideStatus or "disabled"
+            AFKStatusParagraph:SetTitle(string.format("Game AFK: %s", remoteState))
+            AFKStatusParagraph:SetDesc(string.format(
+                "Override: %s\nLobby: %s\nRemote Requests: %d",
+                status,
+                runtime.afkOverrideInLobby and "Yes" or "No",
+                tonumber(runtime.afkOverrideRequestCount) or 0
+            ))
+        end)
+    end
+end)
+
 UtilitiesTab:Section({Title = "Debug"})
 
 UtilitiesTab:Toggle({
     Title = "Full Debug Panel",
-    Desc = "Shows live Runner state, movement gates, goals, assist targets, and the last runtime error.",
+    Desc = "Show the detailed Runner, Catcher, Wheel, Journey, Map Vote, movement, and error panel.",
     Icon = "bug",
     Type = "Checkbox",
-    Value = true,
+    Value = false,
     Callback = function(v)
-        runtime.debugEnabled = v
-        if not v and runtime.debugGui then
+        runtime.debugEnabled = v == true
+        SETTINGS.showDebugUI = runtime.debugEnabled
+        if not runtime.debugEnabled and runtime.debugGui then
             runtime.debugGui.Enabled = false
+        elseif runtime.debugEnabled then
+            updateDebugPanel(os.clock())
         end
     end,
 })
@@ -3144,88 +4785,120 @@ UtilitiesTab:Toggle({
 UtilitiesTab:Section({Title = "Visual Helpers"})
 
 UtilitiesTab:Toggle({
-    Title = "Show Runner Goal",
+    Title = "Show Goal",
     Desc = "Show the current Gem, revive target, or Safe Zone destination.",
     Icon = "target",
     Type = "Checkbox",
     Value = true,
     Callback = function(v)
-        SETTINGS.showGoal = v
-        SETTINGS.showGoalUtility = v
+        SETTINGS.showGoal = v == true
+        SETTINGS.showGoalUtility = SETTINGS.showGoal
+        if not SETTINGS.showGoal then
+            if visuals.goal and visuals.goal.Parent then visuals.goal:Destroy() end
+            visuals.goal = nil
+        end
     end,
 })
 
 UtilitiesTab:Toggle({
-    Title = "Show Catcher Threats",
+    Title = "Show Threats",
     Desc = "Show the danger areas used by Runner prediction and avoidance.",
     Icon = "circle-alert",
     Type = "Checkbox",
     Value = true,
     Callback = function(v)
-        SETTINGS.showThreats = v
-        SETTINGS.showThreatUtility = v
+        SETTINGS.showThreats = v == true
+        SETTINGS.showThreatUtility = SETTINGS.showThreats
+        if not SETTINGS.showThreats then
+            for key, part in pairs(visuals.threats) do
+                if part.Parent then part:Destroy() end
+                visuals.threats[key] = nil
+            end
+        end
     end,
 })
 
 UtilitiesTab:Toggle({
-    Title = "Show Player Hitboxes",
+    Title = "Show Hitboxes",
     Desc = "Show simple visual spheres around players relevant to your current role.",
     Icon = "box",
     Type = "Checkbox",
     Value = true,
     Callback = function(v)
-        SETTINGS.showHitboxes = v
+        SETTINGS.showHitboxes = v == true
+        if not SETTINGS.showHitboxes then
+            for player, part in pairs(visuals.hitboxes) do
+                if part.Parent then part:Destroy() end
+                visuals.hitboxes[player] = nil
+            end
+        end
     end,
 })
 
 WindUI:Notify({
     Title = "Huss Valley",
-    Content = "Runner, Catcher, and Utilities loaded.",
+    Content = "Loaded. Auto Run is enabled by default.",
     Duration = 4,
     Icon = "wind",
 })
 
+local SPEED_RENDER_NAME = "CoH_SpeedOverride"
+RunService:UnbindFromRenderStep(SPEED_RENDER_NAME)
+RunService:BindToRenderStep(SPEED_RENDER_NAME, Enum.RenderPriority.Input.Value + 2, function()
+    local role = getRole()
+    local character = getCharacter()
+    local hum = getHumanoid()
+    if not character or not hum or hum.Health <= 0 then
+        return
+    end
+
+    local state = character:GetAttribute("MovementState")
+    if state == "Dashing" or state == "Boosting" then
+        return
+    end
+
+    local nativeOutput = tonumber(character:GetAttribute("MovementSpeed"))
+    if nativeOutput and nativeOutput > 0 then
+        local desiredSpeed = nativeOutput
+        if role == "Runner" and SETTINGS.customSpeed and SETTINGS.speedMultiplier > 1.0001 then
+            desiredSpeed = nativeOutput * math.clamp(SETTINGS.speedMultiplier, 1, 2)
+        elseif role == "Catcher" and SETTINGS.catcherCustomSpeed and SETTINGS.catcherSpeedMultiplier > 1.0001 then
+            desiredSpeed = nativeOutput * math.clamp(SETTINGS.catcherSpeedMultiplier, 1, 2)
+        end
+        if math.abs(hum.WalkSpeed - desiredSpeed) > 0.05 then
+            hum.WalkSpeed = desiredSpeed
+        end
+    end
+end)
+
 local RENDER_NAME = "CoH_StableController"
 RunService:UnbindFromRenderStep(RENDER_NAME)
 
-RunService:BindToRenderStep(RENDER_NAME, Enum.RenderPriority.Character.Value + 1, function(dt)
+RunService:BindToRenderStep(RENDER_NAME, Enum.RenderPriority.Input.Value, function(dt)
     local now = os.clock()
-    local ok, err = xpcall(function()
-        runnerStep(now, dt)
-    end, function(e)
-        return tostring(e)
-    end)
+    local ok, err = pcall(runnerStep, now, dt)
     if not ok then
-        setDebugError(err)
+        setDebugError("Runner: " .. tostring(err))
     end
-    local catcherOk, catcherErr = xpcall(function()
-        catcherStep(now, dt)
-    end, function(e)
-        return tostring(e)
-    end)
-    if not catcherOk then
-        setDebugError(catcherErr)
+
+    ok, err = pcall(catcherStep, now, dt)
+    if not ok then
+        setDebugError("Catcher: " .. tostring(err))
     end
+
     if now - runtime.utilityTick >= 0.25 then
         runtime.utilityTick = now
-        local utilityOk, utilityErr = xpcall(function()
-            utilityStep(now)
-        end, function(e)
-            return tostring(e)
-        end)
-        if not utilityOk then
-            setDebugError(utilityErr)
+        ok, err = pcall(utilityStep, now)
+        if not ok then
+            setDebugError("Utility: " .. tostring(err))
         end
     end
+
     if runtime.debugEnabled and now - (runtime.debugPanelAt or -math.huge) >= 0.1 then
         runtime.debugPanelAt = now
-        local debugOk, debugErr = xpcall(function()
-            updateDebugPanel(now)
-        end, function(e)
-            return tostring(e)
-        end)
+        local debugOk, debugErr = pcall(updateDebugPanel, now)
         if not debugOk then
-            setDebugError("DebugPanel: " .. debugErr)
+            setDebugError("DebugPanel: " .. tostring(debugErr))
         end
     end
 end)
@@ -3236,9 +4909,29 @@ script.Destroying:Connect(function()
     cleanupVisuals()
     runtime.mapCache = nil
     runtime.mapCacheAt = -math.huge
+    runtime.runnerPlanAt = -math.huge
+    runtime.runnerPlanDirection = Vector3.zero
+    runtime.runnerPlanGoal = Vector3.zero
+    runtime.wheelLastButton = nil
+    runtime.wheelStatus = "disabled"
+    runtime.wheelSpinning = false
+    runtime.wheelNextAttemptAt = -math.huge
+    runtime.journeyStatus = "disabled"
+    runtime.journeyClaimedButtons = {}
+    runtime.journeyLoaded = false
+    runtime.journeySeasonId = nil
+    runtime.journeyClaimInFlight = false
+    runtime.journeyTier = 1
+    runtime.journeyPremium = false
+    runtime.journeyClaims = {}
+    runtime.mapVoteStatus = "disabled"
+    runtime.mapVoteOptions = {}
+    runtime.mapVoteOpen = false
     runtime.safeCheckAt = -math.huge
     runtime.safeCheckPosition = nil
     edgeRayCache.map = nil
     edgeRayCache.field = nil
     edgeRayCache.params = nil
+    edgeRayCache.invisWall = nil
+    edgeRayCache.wallParams = nil
 end)
