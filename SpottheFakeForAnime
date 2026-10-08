@@ -95,6 +95,7 @@ local RUNTIME_NAME = "Runtime"
 local TELEPORT_OFFSET = Vector3.new(0, 3, 0)
 local FIRE_ATTEMPTS = 4
 local FIRE_GAP = 0.08
+local STREAM_WAIT_TIMEOUT = 8
 
 local FALLBACK_TIERS = {
     "Rare", "Storm", "Eclipse", "Nova", "Astral", "Celestial",
@@ -141,6 +142,7 @@ local buttonSet = {}
 local moneyEnabled = false
 local cachedHrp
 local cachedRuntime
+local lastScanNotify = 0
 
 local function rebuildButtonCache()
     table.clear(buttonCache)
@@ -159,6 +161,13 @@ local function notify(title, content, icon, duration)
     pcall(function()
         WindUI:Notify({ Title = title, Content = content, Duration = duration or 2, Icon = icon or "info" })
     end)
+end
+
+local function notifyThrottled(title, content, icon, duration, cooldown)
+    cooldown = cooldown or 3
+    if os.clock() - lastScanNotify < cooldown then return end
+    lastScanNotify = os.clock()
+    notify(title, content, icon, duration)
 end
 
 local function safeFire(remote, ...)
@@ -817,6 +826,29 @@ local function resolveHalloweenRuntime()
     return cachedRuntime
 end
 
+local function forceStreamHalloweenWorld(timeout)
+    timeout = timeout or STREAM_WAIT_TIMEOUT
+    if not HalloweenConfig then return nil end
+    if not workspace.StreamingEnabled then return resolveHalloweenRuntime() end
+
+    local world = workspace:FindFirstChild(HalloweenConfig.WorldName)
+    if not world then return nil end
+
+    local started = os.clock()
+    while os.clock() - started < timeout do
+        local runtime = resolveHalloweenRuntime()
+        if runtime and #runtime:GetChildren() > 0 then return runtime end
+
+        pcall(function()
+            player:RequestStreamAroundAsync(world:GetPivot().Position)
+        end)
+
+        task.wait(0.35)
+    end
+
+    return resolveHalloweenRuntime()
+end
+
 local function isValidTier(name)
     if type(name) ~= "string" or name == "" then return false end
     if not TIER_TEXT_FX or not TIER_TEXT_FX.tierColorAt then return true end
@@ -943,8 +975,8 @@ end
 local function scanHalloweenNPCs()
     local runtime = resolveHalloweenRuntime()
     if not runtime then
-        if workspace.StreamingEnabled then
-            local world = workspace:FindFirstChild(HalloweenConfig and HalloweenConfig.WorldName or WORLD_NAME)
+        if workspace.StreamingEnabled and HalloweenConfig then
+            local world = workspace:FindFirstChild(HalloweenConfig.WorldName)
             if world then
                 pcall(function() player:RequestStreamAroundAsync(world:GetPivot().Position) end)
             end
@@ -995,15 +1027,9 @@ local function discoverHalloweenTiers()
 end
 
 local function scanExistingRarities()
-    local runtime = resolveHalloweenRuntime()
+    local runtime = forceStreamHalloweenWorld(STREAM_WAIT_TIMEOUT)
     if not runtime then
-        if workspace.StreamingEnabled then
-            local world = workspace:FindFirstChild(HalloweenConfig and HalloweenConfig.WorldName or WORLD_NAME)
-            if world then
-                pcall(function() player:RequestStreamAroundAsync(world:GetPivot().Position) end)
-            end
-        end
-        notify("Scan Failed", "Halloween World not loaded yet", "alert-triangle", 3)
+        notifyThrottled("Scanner", "Halloween World is still loading, try again in a moment", "clock", 3)
         return nil
     end
 
@@ -1023,9 +1049,9 @@ local function scanExistingRarities()
     end
 
     if validNPCs == 0 then
-        notify(
+        notifyThrottled(
             "Scanner",
-            ("Found %d models, but 0 valid NPCs yet — world may still be loading"):format(totalNPCs),
+            ("Found %d models, 0 valid NPCs yet — world still streaming"):format(totalNPCs),
             "clock",
             3
         )
@@ -1732,7 +1758,7 @@ HalloweenTierPicker = HalloweenTab:Dropdown({
 
 HalloweenTab:Button({
     Title = "Scan Existing Rarities",
-    Desc = "Scan the Halloween world and report which Egg rarities are currently spawned.",
+    Desc = "Stream in the Halloween world, then report which Egg rarities are currently spawned.",
     Icon = "scan-search",
     Justify = "Center",
     Callback = function()
@@ -1769,7 +1795,10 @@ HalloweenTab:Toggle({
         state.halloweenEgg.active = value == true
         if state.halloweenEgg.active then
             notify("Auto Collect Egg Enabled", "Now collecting Halloween Eggs", "ghost", 2)
-            scanHalloweenNPCs()
+            task.spawn(function()
+                forceStreamHalloweenWorld(STREAM_WAIT_TIMEOUT)
+                scanHalloweenNPCs()
+            end)
         else
             notify("Auto Collect Egg Disabled", "Stopped collecting Eggs", "pause", 2)
             table.clear(state.halloweenEgg.queue)
@@ -1780,24 +1809,41 @@ HalloweenTab:Toggle({
 
 scanNests()
 requestDaily()
-scanHalloweenNPCs()
-if traderRemote then safeFire(traderRemote, "sync") end
-if buyRemote then safeFire(buyRemote, "sync") end
+
+task.spawn(function()
+    if HalloweenConfig then
+        forceStreamHalloweenWorld(STREAM_WAIT_TIMEOUT)
+        scanHalloweenNPCs()
+    end
+end)
 
 local heartbeatAcc = 0
 local hMoneyAcc = 0
 local halloweenSyncAcc = 0
+local halloweenScanAcc = 0
 
 RunService.Heartbeat:Connect(function(dt)
     heartbeatAcc += dt
     hMoneyAcc += dt
     halloweenSyncAcc += dt
+    halloweenScanAcc += dt
 
     if moneyEnabled and hMoneyAcc >= 0.05 then
         hMoneyAcc = 0
         local n = collectMoneyOnce()
         if state.halloweenMoney.active then
             HMoneyStatus:SetDesc(("Claim Buttons found: %d"):format(n))
+        end
+    end
+
+    if state.halloweenEgg.active and halloweenScanAcc >= 1.5 then
+        halloweenScanAcc = 0
+        if not cachedRuntime or not cachedRuntime.Parent then
+            task.spawn(function()
+                forceStreamHalloweenWorld(STREAM_WAIT_TIMEOUT)
+            end)
+        else
+            scanHalloweenNPCs()
         end
     end
 
@@ -1835,7 +1881,7 @@ RunService.Heartbeat:Connect(function(dt)
         )
     end
 
-    if HalloweenConfig then
+    if HalloweenConfig and isInWorld() then
         pcall(autoBuyShopItems)
         pcall(autoBuyHalloweenTreadmills)
         pcall(autoBuyHalloweenTrails)
@@ -1850,7 +1896,6 @@ end)
 task.spawn(function()
     while task.wait(1) do
         if state.nest.active then scanNests() end
-        if state.halloweenEgg.active then scanHalloweenNPCs() end
     end
 end)
 
@@ -1898,9 +1943,20 @@ workspace.DescendantRemoving:Connect(function(d)
     state.halloweenEgg.queueSet[d] = nil
 end)
 
-local halloweenRuntime = resolveHalloweenRuntime()
-if halloweenRuntime then
-    halloweenRuntime.DescendantAdded:Connect(function(d)
+workspace.ChildAdded:Connect(function(child)
+    if child.Name ~= WORLD_NAME then return end
+    task.spawn(function()
+        forceStreamHalloweenWorld(STREAM_WAIT_TIMEOUT)
+        scanHalloweenNPCs()
+    end)
+end)
+
+local function attachRuntimeToWatcher(runtime)
+    if not runtime then return end
+    if runtime:GetAttribute("HauntedWatcherAttached") then return end
+    runtime:SetAttribute("HauntedWatcherAttached", true)
+
+    runtime.DescendantAdded:Connect(function(d)
         if d:IsA("Model") then
             watchHalloweenNPC(d)
             if state.halloweenEgg.active then
@@ -1921,3 +1977,12 @@ if halloweenRuntime then
         end
     end)
 end
+
+task.spawn(function()
+    while task.wait(2) do
+        local rt = resolveHalloweenRuntime()
+        if rt then
+            attachRuntimeToWatcher(rt)
+        end
+    end
+end)
