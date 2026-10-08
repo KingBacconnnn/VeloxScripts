@@ -1,6 +1,5 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local CollectionService = game:GetService("CollectionService")
 local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 
@@ -17,7 +16,7 @@ if not WindUI or tostring(WindUI.Version) ~= "1.6.66" then
     getgenv().WindUI = WindUI
 end
 
-pcall(function()
+local function resolveGuiParent()
     local playerGui = player:WaitForChild("PlayerGui", 10)
     local ok = false
     if type(WindUI.SetParent) == "function" then
@@ -31,8 +30,10 @@ pcall(function()
             if WindUI.TooltipGui then WindUI.TooltipGui.Parent = playerGui end
         end)
     end
-    WindUI:SetNotificationLower(true)
-end)
+    pcall(function() WindUI:SetNotificationLower(true) end)
+end
+
+resolveGuiParent()
 
 WindUI:AddTheme({
     Name = "Haunted",
@@ -62,104 +63,49 @@ WindUI:AddTheme({
 })
 WindUI:SetTheme("Haunted")
 
-local Remotes = require(ReplicatedStorage.Shared.Remotes)
-local TreadmillConfig = require(ReplicatedStorage.Shared.TreadmillConfig)
-local RebirthConfig = require(ReplicatedStorage.Shared.RebirthConfig)
-
-local HalloweenConfig, TIER_TEXT_FX
-pcall(function() HalloweenConfig = require(ReplicatedStorage.Shared.HalloweenConfig) end)
-pcall(function() TIER_TEXT_FX = require(ReplicatedStorage.Shared.TierTextFX) end)
-
-local function safeEvent(name)
-    local ok, ev = pcall(function() return Remotes.event(name) end)
-    return ok and ev or nil
-end
-
-local treadmillRemote = safeEvent("RequestTreadmillUpgrade")
-local trailBuyRemote = safeEvent("RequestTrailBuy")
-local trailEquipRemote = safeEvent("RequestTrailEquip")
-local rebirthRemote = safeEvent("RequestRebirth")
-local baseRemote = safeEvent("RequestBaseUpgrade")
-local dailyClaimRemote = safeEvent("DailyClaim")
-local dailyRequestRemote = safeEvent("DailyRequest")
-local dailyStateEvent = safeEvent("DailyState")
-local buyRemote = safeEvent("CandyShopBuy")
-local equipTrailRemote = safeEvent("RequestTrailEquip")
-local traderRemote = safeEvent("TraderAction")
-local traderStateEvent = safeEvent("TraderState")
-local candyShopStateEvent = safeEvent("CandyShopState")
-
 local HOME = Vector3.new(-1498, -21, 11000)
 local WORLD_NAME = "HalloweenWorld"
 local RUNTIME_NAME = "Runtime"
+local SCAN_INTERVAL = 1
 local TELEPORT_OFFSET = Vector3.new(0, 3, 0)
 local FIRE_ATTEMPTS = 4
 local FIRE_GAP = 0.08
-local STREAM_WAIT_TIMEOUT = 8
 
-local FALLBACK_TIERS = {
-    "Rare", "Storm", "Eclipse", "Nova", "Astral", "Celestial",
-    "Cosmic", "Eternal", "Transcendent", "Infinite", "Ascended",
-    "Primordial", "Haunted", "Cursed", "Phantom", "Wicked",
-    "Nightmare", "Macabre", "Eldritch", "Abyssal",
-}
-local FALLBACK_TIER_INDEX = {}
-for i, tier in ipairs(FALLBACK_TIERS) do FALLBACK_TIER_INDEX[tier] = i end
+local TIER_TEXT_FX
+pcall(function()
+    TIER_TEXT_FX = require(ReplicatedStorage.Shared.TierTextFX)
+end)
 
 local state = {
-    treadmill = { autoBuy = false, busy = false, lastNotEnough = 0 },
-    trail = { autoBuy = false, autoEquip = false, busy = false },
-    rebirth = { auto = false, firing = false, lastFire = 0 },
-    base = { auto = false, lastFire = 0, fails = 0, backoff = 0 },
-    money = { active = false },
-    daily = { autoClaim = false, currentDay = nil, readyAt = 0, lastAttempt = 0 },
-    nest = { active = false, selected = {}, selectedSet = {}, claimed = {}, queue = {}, queueSet = {}, running = false, watched = {} },
-    halloweenMoney = { active = false },
-    halloweenCandy = {
-        autoShop = false, selectedShop = {}, autoTreadmills = false,
-        autoTrails = false, autoEquipTrail = false, lastBuy = 0,
-        liveShop = {}, liveTreadmills = {}, liveTrails = {}, maxStackMinutes = 60,
-        serverOffset = 0, lastSync = 0,
-    },
-    halloweenTrader = {
-        autoExchange = false, autoClaim = false, autoEquipBat = false, autoAura = false,
-        exchangeAmount = 0, lastAction = 0, lastSync = 0, lastAutoEquip = 0, lastAutoAura = 0,
-        serverOffset = 0,
-        data = {
-            rate = 0, windowCap = 0, windowSeconds = 0, converted = 0, windowEndsAt = 0,
-            indexCount = 0, indexTotal = 0, entryCount = 0, entryTotal = 0,
-            rewards = {}, ledger = {}, vault = { bats = {}, aura = nil },
-        },
-    },
-    halloweenEgg = {
-        active = false, selected = {}, selectedSet = {}, claimed = {}, queue = {}, queueSet = {},
-        running = false, watched = {},
-    },
+    active = false,
+    selected = {},
+    selectedSet = {},
+    claimed = {},
+    queue = {},
+    queueSet = {},
+    running = false,
+    watched = {},
 }
 
-local buttonCache = {}
-local buttonSet = {}
-local moneyEnabled = false
-local cachedHrp
 local cachedRuntime
+local cachedHrp
 local lastScanNotify = 0
 
-local function rebuildButtonCache()
-    table.clear(buttonCache)
-    table.clear(buttonSet)
-    for _, v in ipairs(workspace:GetDescendants()) do
-        if v:IsA("BasePart") and v.Name == "Claim Button" then
-            buttonCache[#buttonCache + 1] = v
-            buttonSet[v] = true
-        end
-    end
+local function bindCharacter(character)
+    cachedHrp = character:WaitForChild("HumanoidRootPart", 10)
 end
 
-rebuildButtonCache()
+if player.Character then task.spawn(bindCharacter, player.Character) end
+player.CharacterAdded:Connect(bindCharacter)
 
 local function notify(title, content, icon, duration)
     pcall(function()
-        WindUI:Notify({ Title = title, Content = content, Duration = duration or 2, Icon = icon or "info" })
+        WindUI:Notify({
+            Title = title,
+            Content = content,
+            Duration = duration or 2,
+            Icon = icon or "ghost",
+        })
     end)
 end
 
@@ -170,693 +116,36 @@ local function notifyThrottled(title, content, icon, duration, cooldown)
     notify(title, content, icon, duration)
 end
 
-local function safeFire(remote, ...)
-    if not remote then return false end
-    local ok = pcall(function(...) remote:FireServer(...) end, ...)
-    return ok
-end
-
-local function bindChar(character)
-    cachedHrp = character:WaitForChild("HumanoidRootPart", 10)
-end
-if player.Character then task.spawn(bindChar, player.Character) end
-player.CharacterAdded:Connect(bindChar)
-
-local function getMoney()
-    for _, key in ipairs({"Cash", "Money", "Coins", "Dollars"}) do
-        local v = player:GetAttribute(key)
-        if type(v) == "number" then return v end
+local function resolveRuntime()
+    if cachedRuntime and cachedRuntime.Parent then return cachedRuntime end
+    local world = workspace:FindFirstChild(WORLD_NAME)
+    if not world then
+        cachedRuntime = nil
+        return nil
     end
-    local ls = player:FindFirstChild("leaderstats")
-    if ls then
-        for _, key in ipairs({"Cash", "Money", "Coins", "Dollars"}) do
-            local v = ls:FindFirstChild(key)
-            if v and (v:IsA("IntValue") or v:IsA("NumberValue")) then return v.Value end
-        end
-    end
-    return nil
-end
-
-local function getTreadmillLevel()
-    local v = player:GetAttribute("TreadmillLevel")
-    return type(v) == "number" and v or 1
-end
-
-local function treadmillMax()
-    local ok, result = pcall(TreadmillConfig.maxLevel)
-    return ok and tonumber(result) or #TreadmillConfig.Treadmills
-end
-
-local function getNextTreadmill()
-    local level = getTreadmillLevel()
-    local max = treadmillMax()
-    if level >= max then return nil, level, max end
-    return TreadmillConfig.Treadmills[level + 1], level, max
-end
-
-local function rebirthLevel()
-    local ok, result = pcall(function() return RebirthConfig.levelOf(player) end)
-    return ok and tonumber(result) or 0
-end
-
-local function rebirthMax()
-    return tonumber(RebirthConfig.MaxRebirths) or 99
-end
-
-local function rebirthReady()
-    local ok, result = pcall(function()
-        if type(player:GetAttribute("RebirthLevel")) ~= "number" then return false end
-        if player:GetAttribute("OnTreadmill") == true then return false end
-        if rebirthLevel() >= rebirthMax() then return false end
-        local base = tonumber(player:GetAttribute("BaseLevel")) or 0
-        local tread = tonumber(player:GetAttribute("TreadmillLevel")) or 1
-        local progress = RebirthConfig.progress(base, tread)
-        return type(progress) == "table" and progress.met == true
-    end)
-    return ok and result == true
-end
-
-local function canUseTreadmill(tread)
-    if not tread then return false end
-    if tread.rebirth == true and rebirthLevel() <= 0 then return false end
-    if tread.soldBy == "CandyKeeper" then return false end
-    return true
-end
-
-local function upgradeTreadmill()
-    if state.treadmill.busy or not state.treadmill.autoBuy then return end
-    local nextT, before = getNextTreadmill()
-    if not canUseTreadmill(nextT) then return end
-
-    local money = getMoney()
-    if money ~= nil and nextT.cost ~= nil and money < nextT.cost then
-        if os.clock() - state.treadmill.lastNotEnough > 5 then
-            state.treadmill.lastNotEnough = os.clock()
-            notify("Not Enough Money", ("Need $%s, have $%s"):format(tostring(nextT.cost), tostring(money)), "wallet", 2)
-        end
-        return
-    end
-
-    state.treadmill.busy = true
-    local fired = safeFire(treadmillRemote)
-    if fired then
-        for _ = 1, 10 do
-            task.wait(0.12)
-            if getTreadmillLevel() > before then
-                state.treadmill.busy = false
-                return
-            end
-        end
-    end
-    state.treadmill.busy = false
-end
-
-local function getOwnedTrails(attr)
-    local owned = {}
-    local value = player:GetAttribute(attr or "OwnedTrails")
-    if type(value) ~= "string" then return owned end
-    for id in string.gmatch(value, "[^,]+") do owned[id] = true end
-    return owned
-end
-
-local function getEquippedTrail(attr)
-    return tostring(player:GetAttribute(attr or "EquippedTrail") or "")
-end
-
-local function buyTrails()
-    if not state.trail.autoBuy or state.trail.busy then return end
-    if type(TreadmillConfig.Trails) ~= "table" then return end
-    state.trail.busy = true
-    local owned = getOwnedTrails()
-    for _, trail in ipairs(TreadmillConfig.Trails) do
-        if not trail or not trail.id then continue end
-        if owned[trail.id] then continue end
-        if trail.rebirth == true and rebirthLevel() <= 0 then break end
-        if trail.exclusive or trail.soldBy == "CandyKeeper" then continue end
-        local ok, unlocked = pcall(TreadmillConfig.trailUnlocked, trail.id, owned)
-        if not ok or not unlocked then break end
-        if safeFire(trailBuyRemote, trail.id) then
-            task.wait(0.35)
-            owned = getOwnedTrails()
-        end
-    end
-    state.trail.busy = false
-end
-
-local function equipBestTrail()
-    if not state.trail.autoEquip or state.trail.busy then return end
-    if type(TreadmillConfig.Trails) ~= "table" then return end
-    local owned = getOwnedTrails()
-    local equipped = getEquippedTrail()
-    local bestId, bestMult = nil, -math.huge
-    for _, trail in ipairs(TreadmillConfig.Trails) do
-        if trail and owned[trail.id] then
-            local mult = tonumber(trail.mult) or 0
-            if mult > bestMult then
-                bestMult = mult
-                bestId = trail.id
-            end
-        end
-    end
-    if bestId and equipped ~= bestId then safeFire(trailEquipRemote, bestId) end
-end
-
-local function doRebirth()
-    if state.rebirth.firing then return end
-    if os.clock() - state.rebirth.lastFire < 3 then return end
-    if not rebirthReady() then return end
-    state.rebirth.firing = true
-    state.rebirth.lastFire = os.clock()
-    local before = rebirthLevel()
-    safeFire(rebirthRemote)
-    task.wait(1)
-    local after = rebirthLevel()
-    state.rebirth.firing = false
-    notify(
-        after > before and "Rebirth Success" or "Rebirth Pending",
-        after > before and ("Level %d to %d"):format(before, after) or "Request sent",
-        after > before and "star" or "clock",
-        2
-    )
-end
-
-local function getBases()
-    local seen, list = {}, {}
-    for _, inst in ipairs(CollectionService:GetTagged("Base")) do
-        if inst:IsA("Model") and not seen[inst] then
-            seen[inst] = true
-            list[#list + 1] = inst
-        end
-    end
-    return list
-end
-
-local function fireBaseOnce()
-    local bases = getBases()
-    if #bases == 0 then return false end
-    local fired = false
-    for _, base in ipairs(bases) do fired = safeFire(baseRemote, base) or fired end
-    return fired
-end
-
-local function fireBaseWithCheck()
-    local bases = getBases()
-    if #bases == 0 then return end
-    local changed = false
-    local connections = {}
-    local function watch(inst)
-        connections[#connections + 1] = inst.AttributeChanged:Connect(function() changed = true end)
-        connections[#connections + 1] = inst.DescendantAdded:Connect(function() changed = true end)
-        connections[#connections + 1] = inst.DescendantRemoving:Connect(function() changed = true end)
-    end
-    for _, base in ipairs(bases) do watch(base) end
-    connections[#connections + 1] = player.AttributeChanged:Connect(function() changed = true end)
-    for _, base in ipairs(bases) do safeFire(baseRemote, base) end
-    task.delay(0.8, function()
-        for _, connection in ipairs(connections) do connection:Disconnect() end
-        if changed then
-            state.base.fails = 0
-        else
-            state.base.fails += 1
-            if state.base.fails >= 3 then
-                state.base.backoff = os.clock() + 15
-                state.base.fails = 0
-                notify("Base Upgrade Paused", "No upgrade detected, retrying in 15s", "clock", 3)
-            end
-        end
-    end)
-end
-
-local function collectMoneyOnce()
-    local character = player.Character
-    local root = character and character:FindFirstChild("HumanoidRootPart")
-    if not root then return 0 end
-    if #buttonCache == 0 then rebuildButtonCache() end
-    for _, v in ipairs(buttonCache) do
-        if v.Parent then
-            pcall(function()
-                firetouchinterest(root, v, 0)
-                firetouchinterest(root, v, 1)
-            end)
-        end
-    end
-    return #buttonCache
-end
-
-local function dailyReady()
-    return state.daily.currentDay ~= nil and os.clock() >= state.daily.readyAt
-end
-
-local function dailySecondsLeft()
-    if state.daily.currentDay == nil then return 0 end
-    return math.max(0, math.ceil(state.daily.readyAt - os.clock()))
-end
-
-local function formatTime(seconds)
-    seconds = math.max(0, math.floor(seconds))
-    return ("%02d:%02d:%02d"):format(seconds // 3600, seconds % 3600 // 60, seconds % 60)
-end
-
-local function requestDaily() safeFire(dailyRequestRemote) end
-
-local function tryClaimDaily()
-    if not state.daily.autoClaim then return end
-    if state.daily.currentDay == nil then requestDaily() return end
-    if not dailyReady() then return end
-    if os.clock() - state.daily.lastAttempt < 1 then return end
-    state.daily.lastAttempt = os.clock()
-    local before = state.daily.currentDay
-    safeFire(dailyClaimRemote)
-    task.wait(0.6)
-    requestDaily()
-    task.wait(0.4)
-    local success = state.daily.currentDay ~= before
-    notify(
-        success and "Daily Reward Claimed" or "Claim Pending",
-        success and ("Day %d claimed successfully"):format(before) or "Server did not confirm the claim yet",
-        success and "gift" or "clock",
-        3
-    )
-end
-
-local function isEgg(model)
-    return model and model:IsA("Model") and model:GetAttribute("Egg") == true
-end
-
-local function getRarity(model)
-    return tostring(model and model:GetAttribute("Tier") or "Unknown")
-end
-
-local function streamAround(position)
-    if not workspace.StreamingEnabled then return end
-    pcall(function() player:RequestStreamAroundAsync(position) end)
-end
-
-local function waitForRoot(model, timeout)
-    local elapsed = 0
-    while elapsed < timeout do
-        local root = model:FindFirstChild("HumanoidRootPart")
-        if root then return root end
-        task.wait(0.1)
-        elapsed += 0.1
-    end
-    return nil
-end
-
-local function matchesSelectedRarity(rarity)
-    if #state.nest.selected == 0 then return true end
-    return state.nest.selectedSet[rarity] == true
-end
-
-local function processNest(model)
-    if not state.nest.active or not cachedHrp or not cachedHrp.Parent then return end
-    if not model or not model.Parent or state.nest.claimed[model] or not isEgg(model) then return end
-    local rarity = getRarity(model)
-    if not matchesSelectedRarity(rarity) then return end
-
-    state.nest.claimed[model] = true
-    streamAround(model:GetPivot().Position)
-    task.wait(0.2)
-
-    local root = model:FindFirstChild("HumanoidRootPart") or waitForRoot(model, 2)
-    if not root then state.nest.claimed[model] = nil return end
-
-    local prompts = {}
-    for _, child in ipairs(root:GetChildren()) do
-        if child:IsA("ProximityPrompt") then prompts[#prompts + 1] = child end
-    end
-    if #prompts == 0 then state.nest.claimed[model] = nil return end
-
-    cachedHrp.CFrame = root.CFrame
-    cachedHrp.AssemblyLinearVelocity = Vector3.zero
-    task.wait(0.15)
-
-    for _, prompt in ipairs(prompts) do
-        pcall(function()
-            prompt.Enabled = true
-            prompt.HoldDuration = 0
-        end)
-        if type(fireproximityprompt) == "function" then
-            for _ = 1, 3 do
-                pcall(fireproximityprompt, prompt)
-                task.wait(0.06)
-            end
-        end
-    end
-    cachedHrp.CFrame = CFrame.new(14, -23, -331)
-    task.wait(0.12)
-end
-
-local function runNestQueue()
-    if state.nest.running or not state.nest.active then return end
-    state.nest.running = true
-    task.spawn(function()
-        while #state.nest.queue > 0 and state.nest.active do
-            if not cachedHrp or not cachedHrp.Parent then task.wait(0.25)
-            else processNest(table.remove(state.nest.queue, 1)) end
-        end
-        state.nest.running = false
-    end)
-end
-
-local function enqueueNest(model)
-    if not state.nest.active or not model or state.nest.claimed[model] or state.nest.queueSet[model] then return end
-    if not isEgg(model) then return end
-    if not matchesSelectedRarity(getRarity(model)) then return end
-    state.nest.queueSet[model] = true
-    state.nest.queue[#state.nest.queue + 1] = model
-    runNestQueue()
-end
-
-local function watchNest(model)
-    if state.nest.watched[model] or not model:IsA("Model") then return end
-    state.nest.watched[model] = true
-    model:GetAttributeChangedSignal("EggUid"):Connect(function()
-        state.nest.claimed[model] = nil
-        if state.nest.active then enqueueNest(model) end
-    end)
-    model:GetAttributeChangedSignal("Egg"):Connect(function()
-        state.nest.claimed[model] = nil
-        if state.nest.active and model:GetAttribute("Egg") == true then enqueueNest(model) end
-    end)
-    model.AncestryChanged:Connect(function(_, parent)
-        if not parent then
-            state.nest.claimed[model] = nil
-            state.nest.watched[model] = nil
-            state.nest.queueSet[model] = nil
-        end
-    end)
-end
-
-local function scanNests()
-    for _, d in ipairs(workspace:GetDescendants()) do
-        if d:IsA("Model") and isEgg(d) then
-            watchNest(d)
-            if state.nest.active then enqueueNest(d) end
-        end
-    end
-end
-
-local function collectRarities()
-    local known = {}
-    for _, d in ipairs(workspace:GetDescendants()) do
-        if d:IsA("Model") and isEgg(d) then
-            local rarity = getRarity(d)
-            if rarity ~= "Unknown" then known[rarity] = true end
-        end
-    end
-    local list = {}
-    for rarity in pairs(known) do list[#list + 1] = rarity end
-    table.sort(list)
-    return list
-end
-
-local function isInWorld()
-    return HalloweenConfig and player:GetAttribute(HalloweenConfig.WorldAttr) == HalloweenConfig.WorldName
+    cachedRuntime = world:FindFirstChild(RUNTIME_NAME)
+    return cachedRuntime
 end
 
 local function isHalloweenWorldPresent()
     return workspace:FindFirstChild(WORLD_NAME) ~= nil
 end
 
-local function getCandy()
-    if not HalloweenConfig then return 0 end
-    local v = player:GetAttribute(HalloweenConfig.Candy.Attr)
-    return type(v) == "number" and v or 0
-end
-
-local function getTraderServerTime()
-    return workspace:GetServerTimeNow() + state.halloweenTrader.serverOffset
-end
-
-local function getShopServerTime()
-    return workspace:GetServerTimeNow() + state.halloweenCandy.serverOffset
-end
-
-local function findNpcRoot(npcId)
-    if not HalloweenConfig then return nil end
-    for _, npc in ipairs(CollectionService:GetTagged(HalloweenConfig.NpcTag)) do
-        if npc:IsA("Model") then
-            local id = npc:GetAttribute("NpcId")
-            if type(id) ~= "string" or id == "" then
-                for _, def in ipairs(HalloweenConfig.Npcs) do
-                    if npc.Name == def.model or npc.Name == def.id then
-                        id = def.id
-                        break
-                    end
-                end
-            end
-            if id == npcId then
-                return npc.PrimaryPart or npc:FindFirstChild("HumanoidRootPart")
+local function getTierNamesFromConfig()
+    if not TIER_TEXT_FX then return {} end
+    local names = {}
+    local ok, source = pcall(function()
+        local env = getfenv(TIER_TEXT_FX.tierColorAt)
+        return env
+    end)
+    if ok and type(source) == "table" then
+        for key, value in pairs(source) do
+            if type(key) == "string" and type(value) == "table" and value.palette then
+                names[#names + 1] = key
             end
         end
     end
-    return nil
-end
-
-local function isNearNpc(npcId, proximity)
-    if not cachedHrp or not cachedHrp.Parent then return false end
-    local root = findNpcRoot(npcId)
-    if not root then return false end
-    return (root.Position - cachedHrp.Position).Magnitude <= (proximity or 25)
-end
-
-local shopItemKeys = {}
-local shopItemByKey = {}
-if HalloweenConfig then
-    for _, item in ipairs(HalloweenConfig.Shop) do
-        shopItemKeys[#shopItemKeys + 1] = item.key
-        shopItemByKey[item.key] = item
-    end
-end
-
-local function hasCandyKeeperNearby() return isNearNpc("CandyKeeper", 25) end
-
-local function shopRemainingRoom()
-    local t = state.halloweenTrader.data
-    if t.windowEndsAt <= 0 or t.windowEndsAt <= getTraderServerTime() then return t.windowCap end
-    return math.max(0, t.windowCap - t.converted)
-end
-
-local function shopAffordableRoom()
-    local rate = state.halloweenTrader.data.rate
-    if rate <= 0 then return 0 end
-    return math.floor((getMoney() or 0) / rate)
-end
-
-local function resolveExchangeAmount()
-    local room = math.min(shopRemainingRoom(), shopAffordableRoom())
-    if room <= 0 then return 0 end
-    if state.halloweenTrader.exchangeAmount == 0 then return room end
-    return math.min(room, state.halloweenTrader.exchangeAmount)
-end
-
-local function canBuyShopItem(key)
-    local cfg = shopItemByKey[key]
-    if not cfg then return false end
-    local live = state.halloweenCandy.liveShop[key]
-    local price = (live and live.price) or cfg.price or 0
-    local available = (not live) or live.available ~= false
-    local full = live and live.full == true
-    local owned = (live and live.owned) or 0
-    local max = (live and live.max) or (HalloweenConfig.GiftCharm and HalloweenConfig.GiftCharm.MaxOwned) or 99
-    local dailyBought = (live and live.dailyBought) or 0
-    local dailyCap = (live and live.dailyCap) or (HalloweenConfig.ShopDaily and HalloweenConfig.ShopDaily.Cap) or 5
-    local dailyEndsAt = (live and live.dailyEndsAt) or 0
-    local endsAt = (live and live.endsAt) or 0
-
-    if not available then return false end
-    if getShopServerTime() <= dailyEndsAt and dailyBought >= dailyCap then return false end
-    if key == "GiftCharm" and owned >= max then return false end
-    if cfg.kind ~= "giftcharm" then
-        local activeEndsAt = math.max(endsAt, getShopServerTime())
-        local remaining = math.max(0, activeEndsAt - getShopServerTime())
-        local added = (cfg.minutes or 0) * 60
-        if full or remaining + added > state.halloweenCandy.maxStackMinutes * 60 + 1 then return false end
-    end
-    if getCandy() < price then return false end
-    return true
-end
-
-local function canBuyLadder(entry)
-    if type(entry) ~= "table" then return false end
-    if entry.state ~= "next" then return false end
-    if type(entry.buyKey) ~= "string" then return false end
-    local price = tonumber(entry.price) or 0
-    if price <= 0 then return false end
-    if getCandy() < price then return false end
-    return true
-end
-
-local function tryShopBuy(key)
-    local t = state.halloweenCandy
-    local now = os.clock()
-    if now - t.lastBuy < 0.55 then return false end
-    t.lastBuy = now
-    return safeFire(buyRemote, key)
-end
-
-local function autoBuyShopItems()
-    if not state.halloweenCandy.autoShop then return end
-    if not hasCandyKeeperNearby() then return end
-    local list = #state.halloweenCandy.selectedShop > 0 and state.halloweenCandy.selectedShop or shopItemKeys
-    for _, key in ipairs(list) do
-        if canBuyShopItem(key) then
-            tryShopBuy(key)
-            return
-        end
-    end
-end
-
-local function autoBuyHalloweenTreadmills()
-    if not state.halloweenCandy.autoTreadmills then return end
-    if not hasCandyKeeperNearby() then return end
-    for _, entry in ipairs(state.halloweenCandy.liveTreadmills) do
-        if canBuyLadder(entry) then
-            tryShopBuy(entry.buyKey)
-            return
-        end
-    end
-end
-
-local function autoBuyHalloweenTrails()
-    if not state.halloweenCandy.autoTrails then return end
-    if not hasCandyKeeperNearby() then return end
-    for _, entry in ipairs(state.halloweenCandy.liveTrails) do
-        if canBuyLadder(entry) then
-            tryShopBuy(entry.buyKey)
-            return
-        end
-    end
-end
-
-local function autoEquipHalloweenTrail()
-    if not state.halloweenCandy.autoEquipTrail then return end
-    if not HalloweenConfig then return end
-    local owned = getOwnedTrails(HalloweenConfig.OwnedTrailsAttr)
-    local equipped = getEquippedTrail(HalloweenConfig.TrailAttr)
-    local bestId, bestMult = nil, -math.huge
-    for _, trail in ipairs(HalloweenConfig.Trails) do
-        if owned[trail.id] then
-            local mult = tonumber(trail.mult) or 0
-            if mult > bestMult then
-                bestMult = mult
-                bestId = trail.id
-            end
-        end
-    end
-    if bestId and equipped ~= bestId then
-        safeFire(equipTrailRemote or trailEquipRemote, bestId)
-    end
-end
-
-local function traderCanFire(key)
-    local t = state.halloweenTrader
-    local now = os.clock()
-    if now - t.lastAction < 0.55 then return false end
-    t.lastAction = now
-    return true
-end
-
-local function autoTraderExchange()
-    if not state.halloweenTrader.autoExchange then return end
-    local amount = resolveExchangeAmount()
-    if amount < 1 then return end
-    local npcId = HalloweenConfig and HalloweenConfig.Trader and HalloweenConfig.Trader.NpcId or "Vlad"
-    if not isNearNpc(npcId, 25) then return end
-    if not traderCanFire("convert") then return end
-    safeFire(traderRemote, "convert", amount)
-end
-
-local function autoTraderClaim()
-    if not state.halloweenTrader.autoClaim then return end
-    local npcId = HalloweenConfig and HalloweenConfig.Trader and HalloweenConfig.Trader.NpcId or "Vlad"
-    for _, reward in ipairs(state.halloweenTrader.data.rewards) do
-        if reward.claimable and not reward.claimed then
-            if not isNearNpc(npcId, 25) then return end
-            if not traderCanFire("claim:" .. tostring(reward.id)) then return end
-            safeFire(traderRemote, "claim", reward.id)
-            return
-        end
-    end
-end
-
-local function bestBat()
-    local best, bestScore = nil, -math.huge
-    for _, bat in ipairs(state.halloweenTrader.data.vault.bats) do
-        if bat.unlocked then
-            local score = (tonumber(bat.rangeMult) or 1) * (tonumber(bat.forceMult) or 1)
-            if score > bestScore then
-                bestScore = score
-                best = bat
-            end
-        end
-    end
-    return best
-end
-
-local function autoEquipBestBat()
-    if not state.halloweenTrader.autoEquipBat then return end
-    local t = state.halloweenTrader
-    if os.clock() - t.lastAutoEquip < 5 then return end
-    local best = bestBat()
-    if not best or best.equipped then return end
-    local npcId = HalloweenConfig and HalloweenConfig.Trader and HalloweenConfig.Trader.NpcId or "Vlad"
-    if not isNearNpc(npcId, 25) then return end
-    if not traderCanFire("equip:" .. best.key) then return end
-    t.lastAutoEquip = os.clock()
-    safeFire(traderRemote, "equipBat", best.key)
-end
-
-local function autoActivateAura()
-    if not state.halloweenTrader.autoAura then return end
-    local t = state.halloweenTrader
-    if os.clock() - t.lastAutoAura < 5 then return end
-    local aura = t.data.vault.aura
-    if not aura or not aura.unlocked or aura.on then return end
-    local npcId = HalloweenConfig and HalloweenConfig.Trader and HalloweenConfig.Trader.NpcId or "Vlad"
-    if not isNearNpc(npcId, 25) then return end
-    if not traderCanFire("aura") then return end
-    t.lastAutoAura = os.clock()
-    safeFire(traderRemote, "aura", true)
-end
-
-local function resolveHalloweenRuntime()
-    if cachedRuntime and cachedRuntime.Parent then return cachedRuntime end
-    if not HalloweenConfig then return nil end
-    local world = workspace:FindFirstChild(HalloweenConfig.WorldName)
-    if not world then cachedRuntime = nil return nil end
-    cachedRuntime = world:FindFirstChild(RUNTIME_NAME)
-    return cachedRuntime
-end
-
-local function forceStreamHalloweenWorld(timeout)
-    timeout = timeout or STREAM_WAIT_TIMEOUT
-
-    if not isHalloweenWorldPresent() then
-        return nil
-    end
-
-    local world = workspace:FindFirstChild(WORLD_NAME)
-    if not world then return nil end
-
-    if not workspace.StreamingEnabled then
-        return resolveHalloweenRuntime()
-    end
-
-    local started = os.clock()
-    while os.clock() - started < timeout do
-        local runtime = resolveHalloweenRuntime()
-        if runtime and #runtime:GetChildren() > 0 then return runtime end
-
-        pcall(function()
-            player:RequestStreamAroundAsync(world:GetPivot().Position)
-        end)
-
-        task.wait(0.35)
-    end
-
-    return resolveHalloweenRuntime()
+    return names
 end
 
 local function isValidTier(name)
@@ -866,7 +155,7 @@ local function isValidTier(name)
     return ok and color ~= nil
 end
 
-local function getHalloweenTier(model)
+local function getTier(model)
     local tier = model:GetAttribute("Tier")
     if type(tier) == "string" and tier ~= "" then return tier end
     tier = model:GetAttribute("TierName")
@@ -888,32 +177,35 @@ local function findPrompt(model)
     return root, prompt
 end
 
-local function isHalloweenTargetNPC(model)
+local function isTargetNPC(model)
     if not model or not model:IsA("Model") then return false end
     local root, prompt = findPrompt(model)
     return root ~= nil and prompt ~= nil
 end
 
-local function matchesHalloweenTier(tier)
-    if #state.halloweenEgg.selected == 0 then return true end
-    return state.halloweenEgg.selectedSet[tier] == true
+local function matchesSelected(tier)
+    if #state.selected == 0 then return true end
+    return state.selectedSet[tier] == true
 end
 
-local function processHalloweenNPC(model)
-    if not state.halloweenEgg.active or not cachedHrp or not cachedHrp.Parent then return end
-    if not model or not model.Parent or state.halloweenEgg.claimed[model] then return end
-    local tier = getHalloweenTier(model)
-    if not matchesHalloweenTier(tier) then return end
+local function processNPC(model)
+    if not state.active then return end
+    if not cachedHrp or not cachedHrp.Parent then return end
+    if not model or not model.Parent or state.claimed[model] then return end
+
+    local tier = getTier(model)
+    if not matchesSelected(tier) then return end
+
     local root, prompt = findPrompt(model)
     if not root or not prompt then return end
 
-    state.halloweenEgg.claimed[model] = true
+    state.claimed[model] = true
     cachedHrp.CFrame = root.CFrame + TELEPORT_OFFSET
     cachedHrp.AssemblyLinearVelocity = Vector3.zero
     task.wait(0.2)
 
     if not cachedHrp or not cachedHrp.Parent then
-        state.halloweenEgg.claimed[model] = nil
+        state.claimed[model] = nil
         return
     end
 
@@ -922,6 +214,7 @@ local function processHalloweenNPC(model)
         prompt.Visible = true
         prompt.HoldDuration = 0
     end)
+
     for _ = 1, FIRE_ATTEMPTS do
         pcall(fireproximityprompt, prompt)
         task.wait(FIRE_GAP)
@@ -935,106 +228,122 @@ local function processHalloweenNPC(model)
     task.wait(0.15)
 end
 
-local function runHalloweenQueue()
-    if state.halloweenEgg.running or not state.halloweenEgg.active then return end
-    state.halloweenEgg.running = true
+local function runQueue()
+    if state.running or not state.active then return end
+    state.running = true
     task.spawn(function()
-        while state.halloweenEgg.active do
-            local model = table.remove(state.halloweenEgg.queue, 1)
+        while state.active do
+            local model = table.remove(state.queue, 1)
             if not model then break end
-            state.halloweenEgg.queueSet[model] = nil
-            if not cachedHrp or not cachedHrp.Parent then task.wait(0.25)
-            else processHalloweenNPC(model) end
-        end
-        state.halloweenEgg.running = false
-    end)
-end
-
-local function enqueueHalloweenNPC(model)
-    if not state.halloweenEgg.active or not model then return end
-    if state.halloweenEgg.claimed[model] or state.halloweenEgg.queueSet[model] then return end
-    if not isHalloweenTargetNPC(model) then return end
-    if not matchesHalloweenTier(getHalloweenTier(model)) then return end
-    state.halloweenEgg.queueSet[model] = true
-    state.halloweenEgg.queue[#state.halloweenEgg.queue + 1] = model
-    runHalloweenQueue()
-end
-
-local function watchHalloweenNPC(model)
-    if state.halloweenEgg.watched[model] then return end
-    state.halloweenEgg.watched[model] = true
-    model:GetAttributeChangedSignal("Tier"):Connect(function()
-        state.halloweenEgg.claimed[model] = nil
-        if state.halloweenEgg.active then enqueueHalloweenNPC(model) end
-    end)
-    model.ChildAdded:Connect(function()
-        if state.halloweenEgg.active then
-            state.halloweenEgg.claimed[model] = nil
-            enqueueHalloweenNPC(model)
-        end
-    end)
-    model.AncestryChanged:Connect(function(_, parent)
-        if not parent then
-            state.halloweenEgg.claimed[model] = nil
-            state.halloweenEgg.watched[model] = nil
-            state.halloweenEgg.queueSet[model] = nil
-        end
-    end)
-end
-
-local function scanHalloweenNPCs()
-    if not isHalloweenWorldPresent() then return 0 end
-
-    local runtime = resolveHalloweenRuntime()
-    if not runtime then
-        if workspace.StreamingEnabled then
-            local world = workspace:FindFirstChild(WORLD_NAME)
-            if world then
-                pcall(function() player:RequestStreamAroundAsync(world:GetPivot().Position) end)
+            state.queueSet[model] = nil
+            if not cachedHrp or not cachedHrp.Parent then
+                task.wait(0.25)
+            else
+                processNPC(model)
             end
         end
-        return 0
-    end
+        state.running = false
+    end)
+end
+
+local function enqueue(model)
+    if not state.active or not model then return end
+    if state.claimed[model] or state.queueSet[model] then return end
+    if not isTargetNPC(model) then return end
+    if not matchesSelected(getTier(model)) then return end
+    state.queueSet[model] = true
+    table.insert(state.queue, model)
+    runQueue()
+end
+
+local function watchNPC(model)
+    if state.watched[model] then return end
+    state.watched[model] = true
+
+    model:GetAttributeChangedSignal("Tier"):Connect(function()
+        state.claimed[model] = nil
+        if state.active then enqueue(model) end
+    end)
+    model:GetAttributeChangedSignal("TierName"):Connect(function()
+        state.claimed[model] = nil
+        if state.active then enqueue(model) end
+    end)
+    model:GetAttributeChangedSignal("Rarity"):Connect(function()
+        state.claimed[model] = nil
+        if state.active then enqueue(model) end
+    end)
+    model:GetAttributeChangedSignal("EggTier"):Connect(function()
+        state.claimed[model] = nil
+        if state.active then enqueue(model) end
+    end)
+
+    model.ChildAdded:Connect(function()
+        if state.active then
+            state.claimed[model] = nil
+            enqueue(model)
+        end
+    end)
+
+    model.AncestryChanged:Connect(function(_, parent)
+        if not parent then
+            state.claimed[model] = nil
+            state.watched[model] = nil
+            state.queueSet[model] = nil
+        end
+    end)
+end
+
+local function scanAll()
+    local runtime = resolveRuntime()
+    if not runtime then return 0 end
 
     local found = 0
     for _, model in ipairs(runtime:GetChildren()) do
         if model:IsA("Model") then
-            if not state.halloweenEgg.watched[model] then watchHalloweenNPC(model) end
-            if isHalloweenTargetNPC(model) then
+            if not state.watched[model] then
+                watchNPC(model)
+            end
+            if isTargetNPC(model) then
                 found += 1
-                if state.halloweenEgg.active then enqueueHalloweenNPC(model) end
+                if state.active then
+                    enqueue(model)
+                end
             end
         end
-    end
-
-    if found == 0 and workspace.StreamingEnabled then
-        pcall(function() player:RequestStreamAroundAsync(runtime:GetPivot().Position) end)
     end
     return found
 end
 
-local function discoverHalloweenTiers()
+local function discoverTiers()
     local found = {}
-    local runtime = resolveHalloweenRuntime()
+    local runtime = resolveRuntime()
+
     if runtime then
         for _, model in ipairs(runtime:GetChildren()) do
-            if model:IsA("Model") and isHalloweenTargetNPC(model) then
-                local tier = getHalloweenTier(model)
-                if tier ~= "Unknown" and isValidTier(tier) then found[tier] = true end
+            if model:IsA("Model") and isTargetNPC(model) then
+                local tier = getTier(model)
+                if tier ~= "Unknown" and isValidTier(tier) then
+                    found[tier] = true
+                end
             end
         end
     end
+
     if next(found) == nil then
-        for _, tier in ipairs(FALLBACK_TIERS) do found[tier] = true end
+        local fromConfig = getTierNamesFromConfig()
+        if #fromConfig > 0 then
+            for _, tier in ipairs(fromConfig) do
+                found[tier] = true
+            end
+        end
     end
+
     local list = {}
-    for tier in pairs(found) do list[#list + 1] = tier end
-    table.sort(list, function(a, b)
-        local ai = FALLBACK_TIER_INDEX[a] or math.huge
-        local bi = FALLBACK_TIER_INDEX[b] or math.huge
-        if ai == bi then return a < b end
-        return ai < bi
-    end)
+    for tier in pairs(found) do
+        table.insert(list, tier)
+    end
+
+    table.sort(list)
     return list
 end
 
@@ -1049,7 +358,7 @@ local function scanExistingRarities()
         return nil
     end
 
-    local runtime = forceStreamHalloweenWorld(STREAM_WAIT_TIMEOUT)
+    local runtime = resolveRuntime()
     if not runtime then
         notifyThrottled("Scanner", "Halloween World is still loading, try again in a moment", "clock", 3)
         return nil
@@ -1062,9 +371,9 @@ local function scanExistingRarities()
     for _, model in ipairs(runtime:GetChildren()) do
         if model:IsA("Model") then
             totalNPCs += 1
-            if isHalloweenTargetNPC(model) then
+            if isTargetNPC(model) then
                 validNPCs += 1
-                local tier = getHalloweenTier(model)
+                local tier = getTier(model)
                 tierCounts[tier] = (tierCounts[tier] or 0) + 1
             end
         end
@@ -1085,10 +394,7 @@ local function scanExistingRarities()
         sorted[#sorted + 1] = { tier = tier, count = count }
     end
     table.sort(sorted, function(a, b)
-        local ai = FALLBACK_TIER_INDEX[a.tier] or math.huge
-        local bi = FALLBACK_TIER_INDEX[b.tier] or math.huge
-        if ai == bi then return a.tier < b.tier end
-        return ai < bi
+        return a.tier < b.tier
     end)
 
     print("[HauntedScanner] ================================================")
@@ -1117,670 +423,49 @@ local function scanExistingRarities()
     return sorted
 end
 
-if traderStateEvent then
-    traderStateEvent.OnClientEvent:Connect(function(data)
-        if type(data) ~= "table" then return end
-        local t = state.halloweenTrader.data
-        t.rate = tonumber(data.rate) or t.rate
-        t.windowCap = tonumber(data.windowCap) or t.windowCap
-        t.windowSeconds = tonumber(data.windowSeconds) or t.windowSeconds
-        t.converted = tonumber(data.converted) or 0
-        t.windowEndsAt = tonumber(data.windowEndsAt) or 0
-        t.indexCount = tonumber(data.indexCount) or 0
-        t.indexTotal = tonumber(data.indexTotal) or 0
-        t.entryCount = tonumber(data.entryCount) or 0
-        t.entryTotal = tonumber(data.entryTotal) or 0
-
-        if type(data.rewards) == "table" then
-            local list = {}
-            for _, r in ipairs(data.rewards) do
-                if type(r) == "table" and type(r.id) == "string" then
-                    list[#list + 1] = {
-                        id = r.id, need = tonumber(r.need) or 0,
-                        needAll = r.needAll == true, claimed = r.claimed == true,
-                        claimable = r.claimable == true, candy = tonumber(r.candy),
-                    }
-                end
-            end
-            t.rewards = list
-        end
-
-        if type(data.ledger) == "table" then
-            local list = {}
-            for _, entry in ipairs(data.ledger) do
-                if type(entry) == "table" then
-                    list[#list + 1] = {
-                        amount = tonumber(entry.amount) or 0,
-                        cost = tonumber(entry.cost) or 0,
-                        at = tonumber(entry.at) or 0,
-                    }
-                end
-            end
-            t.ledger = list
-        end
-
-        if type(data.vault) == "table" then
-            local bats = {}
-            if type(data.vault.bats) == "table" then
-                for _, b in ipairs(data.vault.bats) do
-                    if type(b) == "table" and type(b.key) == "string" then
-                        bats[#bats + 1] = {
-                            key = b.key,
-                            name = type(b.name) == "string" and b.name or b.key,
-                            need = tonumber(b.need) or 0,
-                            rangeMult = tonumber(b.rangeMult) or 1,
-                            forceMult = tonumber(b.forceMult) or 1,
-                            unlocked = b.unlocked == true,
-                            equipped = b.equipped == true,
-                        }
-                    end
-                end
-            end
-            local aura = nil
-            if type(data.vault.aura) == "table" then
-                aura = {
-                    key = type(data.vault.aura.key) == "string" and data.vault.aura.key or "PumpkinKingAura",
-                    name = type(data.vault.aura.name) == "string" and data.vault.aura.name or "Pumpkin King Aura",
-                    unlocked = data.vault.aura.unlocked == true,
-                    on = data.vault.aura.on == true,
-                }
-            end
-            t.vault = { bats = bats, aura = aura }
-        end
-    end)
-end
-
-if candyShopStateEvent then
-    candyShopStateEvent.OnClientEvent:Connect(function(data)
-        if type(data) ~= "table" then return end
-        local now = tonumber(data.now)
-        if now then
-            local diff = now - workspace:GetServerTimeNow()
-            state.halloweenCandy.serverOffset = math.abs(diff) > 3 and 0 or diff
-        end
-        if type(data.items) == "table" then
-            for _, item in ipairs(data.items) do
-                if type(item) == "table" and type(item.key) == "string" then
-                    state.halloweenCandy.liveShop[item.key] = {
-                        price = tonumber(item.price) or 0,
-                        minutes = tonumber(item.minutes) or 0,
-                        endsAt = tonumber(item.endsAt) or 0,
-                        full = item.full == true,
-                        owned = tonumber(item.owned) or 0,
-                        max = tonumber(item.max) or 99,
-                        available = item.available ~= false,
-                        dailyBought = tonumber(item.dailyBought) or 0,
-                        dailyCap = tonumber(item.dailyCap) or 0,
-                        dailyEndsAt = tonumber(item.dailyEndsAt) or 0,
-                    }
-                end
-            end
-            local msm = tonumber(data.maxMinutes)
-            if msm then state.halloweenCandy.maxStackMinutes = msm end
-        end
-        if type(data.ladder) == "table" then
-            if type(data.ladder.treadmills) == "table" then
-                state.halloweenCandy.liveTreadmills = data.ladder.treadmills
-            end
-            if type(data.ladder.trails) == "table" then
-                state.halloweenCandy.liveTrails = data.ladder.trails
-            end
-        end
-    end)
-end
-
-if dailyStateEvent then
-    dailyStateEvent.OnClientEvent:Connect(function(data)
-        if type(data) ~= "table" then return end
-        if type(data.day) ~= "number" then return end
-        state.daily.currentDay = math.clamp(data.day, 1, 7)
-        state.daily.readyAt = os.clock() + math.max(0, tonumber(data.remaining) or 0)
-    end)
-end
-
 local Window = WindUI:CreateWindow({
-    Title = "[🎃] Spot the Fake For Anime",
-    Icon = "settings",
+    Title = "[🎃] Haunted Egg Reaper",
+    Icon = "ghost",
     Author = "Ovei",
-    Folder = "SpotTheFake",
-    Size = UDim2.fromOffset(520, 460),
+    Folder = "HauntedReaper",
+    Size = UDim2.fromOffset(500, 440),
     Transparent = true,
     Theme = "Haunted",
     Resizable = true,
     SideBarWidth = 180,
 })
 
-local FarmTab = Window:Tab({
-    Title = "Farming",
-    Desc = "Automatically collect resources and rewards.",
-    Icon = "pickaxe",
+local MainTab = Window:Tab({
+    Title = "Haunted Grounds",
+    Desc = "Silently reap Halloween Eggs from cursed Nests.",
+    Icon = "skull",
 })
 
-FarmTab:Toggle({
-    Title = "Collect Money",
-    Desc = "Automatically collect Money from every available Claim Button.",
-    Icon = "hand-coins",
-    Type = "Checkbox",
-    Value = false,
-    Callback = function(value)
-        state.money.active = value == true
-        moneyEnabled = state.money.active or state.halloweenMoney.active
-        notify(
-            state.money.active and "Money Collection Enabled" or "Money Collection Disabled",
-            state.money.active and "Touching all Claim Buttons" or "Stopped collecting Money",
-            state.money.active and "play" or "pause"
-        )
-    end,
-})
-
-FarmTab:Button({
-    Title = "Collect Once",
-    Desc = "Collect available Money once with a single sweep.",
-    Icon = "hand-coins",
-    Justify = "Center",
-    Callback = function()
-        collectMoneyOnce()
-        notify("Collected", "Touched all Claim Buttons", "coins", 2)
-    end,
-})
-
-FarmTab:Divider()
-
-local RarityPicker
-RarityPicker = FarmTab:Dropdown({
-    Title = "Egg Rarities to Claim",
-    Desc = "Choose which Egg rarities to collect, or leave empty to collect all rarities.",
-    Values = collectRarities(),
-    Value = {},
-    Multi = true,
-    AllowNone = true,
-    Callback = function(picked)
-        state.nest.selected = picked or {}
-        table.clear(state.nest.selectedSet)
-        for _, rarity in ipairs(state.nest.selected) do state.nest.selectedSet[rarity] = true end
-        if state.nest.active then
-            table.clear(state.nest.queue)
-            table.clear(state.nest.queueSet)
-            scanNests()
-        end
-    end,
-})
-
-FarmTab:Button({
-    Title = "Refresh Rarity List",
-    Desc = "Refresh the available Egg rarities.",
-    Icon = "refresh-cw",
-    Justify = "Center",
-    Callback = function()
-        local list = collectRarities()
-        pcall(function() RarityPicker:Refresh(list) end)
-        notify("Rarity List Updated", ("Found %d rarity type(s)"):format(#list), "refresh-cw", 3)
-    end,
-})
-
-FarmTab:Toggle({
-    Title = "Enable Auto Claim",
-    Desc = "Automatically collect Eggs from matching Nests when enabled.",
-    Icon = "play",
-    Type = "Checkbox",
-    Value = false,
-    Callback = function(value)
-        state.nest.active = value == true
-        if state.nest.active then
-            notify("Auto Claim Enabled", "Now claiming matching nests", "play", 2)
-            scanNests()
-        else
-            notify("Auto Claim Disabled", "Stopped claiming", "pause", 2)
-            table.clear(state.nest.queue)
-            table.clear(state.nest.queueSet)
-        end
-    end,
-})
-
-local UpgradeTab = Window:Tab({
-    Title = "Upgrades",
-    Desc = "Automatically upgrade your equipment and base.",
-    Icon = "rocket",
-})
-
-UpgradeTab:Toggle({
-    Title = "Auto Buy Treadmill",
-    Desc = "Automatically purchase Treadmill upgrades when available.",
-    Icon = "shopping-cart",
-    Type = "Checkbox",
-    Value = false,
-    Callback = function(value)
-        state.treadmill.autoBuy = value == true
-        notify(
-            state.treadmill.autoBuy and "Treadmill Auto Buy Enabled" or "Treadmill Auto Buy Disabled",
-            state.treadmill.autoBuy and "Purchasing Treadmill upgrades" or "Stopped purchasing",
-            state.treadmill.autoBuy and "play" or "pause"
-        )
-    end,
-})
-
-UpgradeTab:Divider()
-
-UpgradeTab:Toggle({
-    Title = "Auto Buy Trails",
-    Desc = "Automatically buy unlocked Trails in order as they become available.",
-    Icon = "shopping-cart",
-    Type = "Checkbox",
-    Value = false,
-    Callback = function(value)
-        state.trail.autoBuy = value == true
-        notify(
-            state.trail.autoBuy and "Trail Auto Buy Enabled" or "Trail Auto Buy Disabled",
-            state.trail.autoBuy and "Buying unlocked Trails" or "Stopped buying Trails",
-            state.trail.autoBuy and "play" or "pause"
-        )
-    end,
-})
-
-UpgradeTab:Toggle({
-    Title = "Auto Equip Best Trail",
-    Desc = "Automatically equip your highest-multiplier Trail.",
-    Icon = "swords",
-    Type = "Checkbox",
-    Value = false,
-    Callback = function(value)
-        state.trail.autoEquip = value == true
-        notify(
-            state.trail.autoEquip and "Auto Equip Trail Enabled" or "Auto Equip Trail Disabled",
-            state.trail.autoEquip and "Equipping your best Trail" or "Stopped equipping",
-            state.trail.autoEquip and "play" or "pause"
-        )
-    end,
-})
-
-UpgradeTab:Divider()
-
-UpgradeTab:Toggle({
-    Title = "Auto Upgrade Base",
-    Desc = "Automatically upgrade your Base and retry after failures.",
-    Icon = "arrow-up",
-    Type = "Checkbox",
-    Value = false,
-    Callback = function(value)
-        state.base.auto = value == true
-        state.base.fails = 0
-        state.base.backoff = 0
-        notify(
-            state.base.auto and "Base Auto Upgrade Enabled" or "Base Auto Upgrade Disabled",
-            state.base.auto and "Upgrading your Base" or "Stopped upgrading Base",
-            state.base.auto and "play" or "pause"
-        )
-    end,
-})
-
-UpgradeTab:Button({
-    Title = "Upgrade Base Once",
-    Desc = "Attempt one Base upgrade immediately.",
-    Icon = "rocket",
-    Justify = "Center",
-    Callback = function()
-        if fireBaseOnce() then
-            notify("Upgrade Sent", "Fired RequestBaseUpgrade", "rocket", 2)
-        else
-            notify("No Base Found", "Could not find a base tagged 'Base'", "alert-triangle", 3)
-        end
-    end,
-})
-
-local ProgressTab = Window:Tab({
-    Title = "Progress",
-    Desc = "Automatically keep your account progression moving.",
-    Icon = "trending-up",
-})
-
-ProgressTab:Toggle({
-    Title = "Auto Rebirth",
-    Desc = "Automatically rebirth whenever you meet the requirements.",
-    Icon = "star",
-    Type = "Checkbox",
-    Value = false,
-    Callback = function(value)
-        state.rebirth.auto = value == true
-        notify(
-            state.rebirth.auto and "Auto Rebirth Enabled" or "Auto Rebirth Disabled",
-            state.rebirth.auto and "Rebirthing when ready" or "Stopped rebirthing",
-            state.rebirth.auto and "play" or "pause"
-        )
-    end,
-})
-
-ProgressTab:Divider()
-
-local DailyStatus = ProgressTab:Paragraph({
-    Title = "Daily Status",
-    Desc = "Shows your current Daily Reward status.",
-    Icon = "info",
-    Color = "Blue",
-    Buttons = {},
-})
-
-ProgressTab:Toggle({
-    Title = "Auto Claim Daily Reward",
-    Desc = "Automatically claim your Daily Reward as soon as the cooldown ends.",
-    Icon = "gift",
-    Type = "Checkbox",
-    Value = false,
-    Callback = function(value)
-        state.daily.autoClaim = value == true
-        if state.daily.autoClaim then requestDaily() end
-        notify(
-            state.daily.autoClaim and "Daily Auto Claim Enabled" or "Daily Auto Claim Disabled",
-            state.daily.autoClaim and "Claiming when available" or "Stopped claiming Daily",
-            state.daily.autoClaim and "play" or "pause"
-        )
-    end,
-})
-
-ProgressTab:Button({
-    Title = "Refresh Daily Status",
-    Desc = "Refresh your current Daily Reward status.",
-    Icon = "refresh-cw",
-    Justify = "Center",
-    Callback = function()
-        requestDaily()
-        task.wait(0.4)
-        if state.daily.currentDay then
-            local left = dailySecondsLeft()
-            DailyStatus:SetDesc(
-                left == 0 and ("Day %d ready to claim now"):format(state.daily.currentDay)
-                or ("Day %d ready in %s"):format(state.daily.currentDay, formatTime(left))
-            )
-        else
-            DailyStatus:SetDesc("No data yet, try again")
-        end
-    end,
-})
-
-ProgressTab:Button({
-    Title = "Claim Daily Now",
-    Desc = "Attempt to claim your Daily Reward immediately.",
-    Icon = "hand-coins",
-    Justify = "Center",
-    Callback = function()
-        if state.daily.currentDay == nil then
-            notify("Not Ready", "No daily data yet", "alert-triangle", 3)
-            return
-        end
-        if not dailyReady() then
-            notify("Not Ready", ("Available in %s"):format(formatTime(dailySecondsLeft())), "clock", 3)
-            return
-        end
-        state.daily.lastAttempt = 0
-        task.spawn(function()
-            local oldAuto = state.daily.autoClaim
-            state.daily.autoClaim = true
-            tryClaimDaily()
-            state.daily.autoClaim = oldAuto
-        end)
-    end,
-})
-
-local HalloweenTab = Window:Tab({
-    Title = "Halloween",
-    Desc = "Automatically collect, trade, and upgrade during the Halloween event.",
-    Icon = "ghost",
-})
-
-local HMoneyStatus = HalloweenTab:Paragraph({
-    Title = "Money Status",
-    Desc = "Shows the current Money collection status.",
-    Icon = "info",
-    Color = "Blue",
-    Buttons = {},
-})
-
-HalloweenTab:Toggle({
-    Title = "Auto Collect Money",
-    Desc = "Automatically collect Money from every available Claim Button in the Halloween world.",
-    Icon = "hand-coins",
-    Type = "Checkbox",
-    Value = false,
-    Callback = function(value)
-        state.halloweenMoney.active = value == true
-        moneyEnabled = state.money.active or state.halloweenMoney.active
-        notify(
-            state.halloweenMoney.active and "Haunted Money Enabled" or "Haunted Money Disabled",
-            state.halloweenMoney.active and "Touching Halloween Claim Buttons" or "Stopped collecting",
-            state.halloweenMoney.active and "play" or "pause"
-        )
-    end,
-})
-
-HalloweenTab:Button({
-    Title = "Collect Money Once",
-    Desc = "Collect available Money once with a single sweep.",
-    Icon = "hand-coins",
-    Justify = "Center",
-    Callback = function()
-        local n = collectMoneyOnce()
-        notify("Collected", ("Touched %d Claim Button(s)"):format(n), "coins", 2)
-    end,
-})
-
-HalloweenTab:Divider()
-
-local traderQuickAmounts = {}
-if HalloweenConfig and HalloweenConfig.Trader and HalloweenConfig.Trader.QuickAmounts then
-    for _, amount in ipairs(HalloweenConfig.Trader.QuickAmounts) do
-        traderQuickAmounts[#traderQuickAmounts + 1] = tostring(amount)
-    end
-end
-traderQuickAmounts[#traderQuickAmounts + 1] = "MAX"
-
-HalloweenTab:Dropdown({
-    Title = "Exchange Amount",
-    Desc = "Choose how much Candy to purchase each cycle, or select MAX to use all available Cash.",
-    Values = traderQuickAmounts,
-    Value = "MAX",
-    Multi = false,
-    Callback = function(value)
-        if value == "MAX" then
-            state.halloweenTrader.exchangeAmount = 0
-        else
-            state.halloweenTrader.exchangeAmount = math.floor(tonumber(value) or 0)
-        end
-    end,
-})
-
-HalloweenTab:Toggle({
-    Title = "Auto Exchange Cash for Candy",
-    Desc = "Automatically exchange Cash for Candy whenever purchases are available.",
-    Icon = "arrow-left-right",
-    Type = "Checkbox",
-    Value = false,
-    Callback = function(value)
-        state.halloweenTrader.autoExchange = value == true
-        notify(
-            state.halloweenTrader.autoExchange and "Auto Exchange Enabled" or "Auto Exchange Disabled",
-            state.halloweenTrader.autoExchange and "Trading Cash for Candy" or "Stopped trading",
-            state.halloweenTrader.autoExchange and "play" or "pause"
-        )
-    end,
-})
-
-HalloweenTab:Toggle({
-    Title = "Auto Claim Index Rewards",
-    Desc = "Automatically claim unlocked Index rewards as soon as they become available.",
-    Icon = "gift",
-    Type = "Checkbox",
-    Value = false,
-    Callback = function(value)
-        state.halloweenTrader.autoClaim = value == true
-        notify(
-            state.halloweenTrader.autoClaim and "Auto Claim Enabled" or "Auto Claim Disabled",
-            state.halloweenTrader.autoClaim and "Claiming Index rewards" or "Stopped claiming",
-            state.halloweenTrader.autoClaim and "play" or "pause"
-        )
-    end,
-})
-
-HalloweenTab:Toggle({
-    Title = "Auto Equip Best Bat",
-    Desc = "Automatically equip your strongest unlocked Bat from the Vault.",
-    Icon = "swords",
-    Type = "Checkbox",
-    Value = false,
-    Callback = function(value)
-        state.halloweenTrader.autoEquipBat = value == true
-        notify(
-            state.halloweenTrader.autoEquipBat and "Auto Equip Bat Enabled" or "Auto Equip Bat Disabled",
-            state.halloweenTrader.autoEquipBat and "Equipping strongest Bat" or "Stopped equipping",
-            state.halloweenTrader.autoEquipBat and "play" or "pause"
-        )
-    end,
-})
-
-HalloweenTab:Toggle({
-    Title = "Auto Activate Aura",
-    Desc = "Automatically activate the Pumpkin King Aura as soon as you unlock it.",
-    Icon = "sparkles",
-    Type = "Checkbox",
-    Value = false,
-    Callback = function(value)
-        state.halloweenTrader.autoAura = value == true
-        notify(
-            state.halloweenTrader.autoAura and "Auto Aura Enabled" or "Auto Aura Disabled",
-            state.halloweenTrader.autoAura and "Activating Aura when unlocked" or "Stopped activating",
-            state.halloweenTrader.autoAura and "play" or "pause"
-        )
-    end,
-})
-
-HalloweenTab:Button({
-    Title = "Refresh Trader State",
-    Desc = "Refresh the latest Trader prices, limits, and rewards.",
-    Icon = "refresh-cw",
-    Justify = "Center",
-    Callback = function()
-        safeFire(traderRemote, "sync")
-        notify("Trader State Requested", "Refreshing trader data", "refresh-cw", 2)
-    end,
-})
-
-HalloweenTab:Divider()
-
-HalloweenTab:Dropdown({
-    Title = "Shop Items to Buy",
-    Desc = "Choose which Candy Shop items to buy, or leave empty to purchase everything available.",
-    Values = shopItemKeys,
-    Value = {},
-    Multi = true,
-    AllowNone = true,
-    Callback = function(picked)
-        state.halloweenCandy.selectedShop = picked or {}
-    end,
-})
-
-HalloweenTab:Toggle({
-    Title = "Auto Buy Shop Items",
-    Desc = "Automatically buy selected Candy Shop items whenever you have enough Candy.",
-    Icon = "shopping-cart",
-    Type = "Checkbox",
-    Value = false,
-    Callback = function(value)
-        state.halloweenCandy.autoShop = value == true
-        if state.halloweenCandy.autoShop then safeFire(buyRemote, "sync") end
-        notify(
-            state.halloweenCandy.autoShop and "Auto Buy Shop Enabled" or "Auto Buy Shop Disabled",
-            state.halloweenCandy.autoShop and "Buying selected items" or "Stopped buying items",
-            state.halloweenCandy.autoShop and "play" or "pause"
-        )
-    end,
-})
-
-HalloweenTab:Toggle({
-    Title = "Auto Buy Halloween Treadmills",
-    Desc = "Automatically buy the next Halloween Treadmill whenever you can afford it.",
-    Icon = "shopping-cart",
-    Type = "Checkbox",
-    Value = false,
-    Callback = function(value)
-        state.halloweenCandy.autoTreadmills = value == true
-        if state.halloweenCandy.autoTreadmills then safeFire(buyRemote, "sync") end
-        notify(
-            state.halloweenCandy.autoTreadmills and "Auto Buy Treadmill Enabled" or "Auto Buy Treadmill Disabled",
-            state.halloweenCandy.autoTreadmills and "Buying Halloween Treadmills" or "Stopped buying",
-            state.halloweenCandy.autoTreadmills and "play" or "pause"
-        )
-    end,
-})
-
-HalloweenTab:Toggle({
-    Title = "Auto Buy Halloween Trails",
-    Desc = "Automatically buy the next Halloween Trail whenever you can afford it.",
-    Icon = "shopping-cart",
-    Type = "Checkbox",
-    Value = false,
-    Callback = function(value)
-        state.halloweenCandy.autoTrails = value == true
-        if state.halloweenCandy.autoTrails then safeFire(buyRemote, "sync") end
-        notify(
-            state.halloweenCandy.autoTrails and "Auto Buy Trails Enabled" or "Auto Buy Trails Disabled",
-            state.halloweenCandy.autoTrails and "Buying Halloween Trails" or "Stopped buying",
-            state.halloweenCandy.autoTrails and "play" or "pause"
-        )
-    end,
-})
-
-HalloweenTab:Toggle({
-    Title = "Auto Equip Best Halloween Trail",
-    Desc = "Automatically equip your highest-multiplier Halloween Trail.",
-    Icon = "swords",
-    Type = "Checkbox",
-    Value = false,
-    Callback = function(value)
-        state.halloweenCandy.autoEquipTrail = value == true
-        notify(
-            state.halloweenCandy.autoEquipTrail and "Auto Equip Trail Enabled" or "Auto Equip Trail Disabled",
-            state.halloweenCandy.autoEquipTrail and "Equipping best Halloween Trail" or "Stopped equipping",
-            state.halloweenCandy.autoEquipTrail and "play" or "pause"
-        )
-    end,
-})
-
-HalloweenTab:Button({
-    Title = "Refresh Shop State",
-    Desc = "Refresh the latest Candy Shop prices and timers.",
-    Icon = "refresh-cw",
-    Justify = "Center",
-    Callback = function()
-        safeFire(buyRemote, "sync")
-        notify("Shop State Requested", "Refreshing Candy Shop prices", "refresh-cw", 2)
-    end,
-})
-
-HalloweenTab:Divider()
-
-local HalloweenTierPicker
-HalloweenTierPicker = HalloweenTab:Dropdown({
+local TierPicker
+TierPicker = MainTab:Dropdown({
     Title = "Cursed Tiers",
-    Desc = "Choose which Egg tiers to collect, or leave empty to collect every cursed tier.",
-    Values = discoverHalloweenTiers(),
+    Desc = "Mark which Egg tiers to haunt, or leave empty to harvest every cursed tier.",
+    Values = discoverTiers(),
     Value = {},
     Multi = true,
     AllowNone = true,
     Callback = function(picked)
-        state.halloweenEgg.selected = picked or {}
-        table.clear(state.halloweenEgg.selectedSet)
-        for _, tier in ipairs(state.halloweenEgg.selected) do
-            state.halloweenEgg.selectedSet[tier] = true
+        state.selected = picked or {}
+        table.clear(state.selectedSet)
+        for _, tier in ipairs(state.selected) do
+            state.selectedSet[tier] = true
         end
-        if state.halloweenEgg.active then
-            table.clear(state.halloweenEgg.queue)
-            table.clear(state.halloweenEgg.queueSet)
-            scanHalloweenNPCs()
+        if state.active then
+            table.clear(state.queue)
+            table.clear(state.queueSet)
+            scanAll()
         end
     end,
 })
 
-HalloweenTab:Button({
+MainTab:Button({
     Title = "Scan Existing Rarities",
-    Desc = "Stream in the Halloween world, then report which Egg rarities are currently spawned.",
+    Desc = "Scan the Halloween world and report which Egg rarities are currently spawned.",
     Icon = "scan-search",
     Justify = "Center",
     Callback = function()
@@ -1790,218 +475,77 @@ HalloweenTab:Button({
             for _, entry in ipairs(result) do
                 list[#list + 1] = entry.tier
             end
-            pcall(function() HalloweenTierPicker:Refresh(list) end)
+            pcall(function() TierPicker:Refresh(list) end)
         end
     end,
 })
 
-HalloweenTab:Button({
+MainTab:Button({
     Title = "Refresh Cursed Tiers",
-    Desc = "Refresh the available Halloween Egg tiers.",
+    Desc = "Re-scan the Halloween world for new tiers.",
     Icon = "refresh-cw",
     Justify = "Center",
     Callback = function()
-        local list = discoverHalloweenTiers()
-        pcall(function() HalloweenTierPicker:Refresh(list) end)
+        local list = discoverTiers()
+        pcall(function() TierPicker:Refresh(list) end)
         notify("Cursed Tiers Updated", ("Found %d tier type(s)"):format(#list), "refresh-cw", 3)
     end,
 })
 
-HalloweenTab:Toggle({
-    Title = "Auto Collect Egg",
-    Desc = "Automatically collect matching Eggs from cursed Nests and return home after each collection.",
+MainTab:Toggle({
+    Title = "Awaken the Reaper",
+    Desc = "Wander the Halloween world, seize matching Eggs from cursed Nests, then vanish home.",
     Icon = "ghost",
     Type = "Checkbox",
     Value = false,
     Callback = function(value)
-        state.halloweenEgg.active = value == true
-        if state.halloweenEgg.active then
+        state.active = value == true
+        if state.active then
             if not isHalloweenWorldPresent() then
-                notify(
-                    "Auto Collect Egg Enabled",
-                    "Waiting for you to enter the Halloween World…",
-                    "clock",
-                    3
-                )
+                notify("Awaken the Reaper", "Waiting for you to enter the Halloween World…", "clock", 3)
             else
-                notify("Auto Collect Egg Enabled", "Now collecting Halloween Eggs", "ghost", 2)
-                task.spawn(function()
-                    forceStreamHalloweenWorld(STREAM_WAIT_TIMEOUT)
-                    scanHalloweenNPCs()
-                end)
+                notify("The Reaper Awakens", "The hunt begins…", "ghost", 2)
+                scanAll()
             end
         else
-            notify("Auto Collect Egg Disabled", "Stopped collecting Eggs", "pause", 2)
-            table.clear(state.halloweenEgg.queue)
-            table.clear(state.halloweenEgg.queueSet)
+            notify("The Reaper Rests", "Returning to the shadows.", "moon", 2)
+            table.clear(state.queue)
+            table.clear(state.queueSet)
         end
     end,
 })
 
-scanNests()
-requestDaily()
-
-task.spawn(function()
-    if HalloweenConfig and isHalloweenWorldPresent() then
-        forceStreamHalloweenWorld(STREAM_WAIT_TIMEOUT)
-        scanHalloweenNPCs()
-    end
-end)
-
-local heartbeatAcc = 0
-local hMoneyAcc = 0
-local halloweenSyncAcc = 0
-local halloweenScanAcc = 0
-
+local scanAccumulator = 0
 RunService.Heartbeat:Connect(function(dt)
-    heartbeatAcc += dt
-    hMoneyAcc += dt
-    halloweenSyncAcc += dt
-    halloweenScanAcc += dt
-
-    if moneyEnabled and hMoneyAcc >= 0.05 then
-        hMoneyAcc = 0
-        local n = collectMoneyOnce()
-        if state.halloweenMoney.active then
-            HMoneyStatus:SetDesc(("Claim Buttons found: %d"):format(n))
-        end
-    end
-
-    if state.halloweenEgg.active and halloweenScanAcc >= 1.5 and isHalloweenWorldPresent() then
-        halloweenScanAcc = 0
-        if not cachedRuntime or not cachedRuntime.Parent then
-            task.spawn(function()
-                forceStreamHalloweenWorld(STREAM_WAIT_TIMEOUT)
-            end)
-        else
-            scanHalloweenNPCs()
-        end
-    end
-
-    if halloweenSyncAcc >= 5 then
-        halloweenSyncAcc = 0
-        if HalloweenConfig and isInWorld() then
-            if hasCandyKeeperNearby() and buyRemote then safeFire(buyRemote, "sync") end
-            local npcId = HalloweenConfig.Trader and HalloweenConfig.Trader.NpcId or "Vlad"
-            if isNearNpc(npcId, 25) and traderRemote then safeFire(traderRemote, "sync") end
-        end
-    end
-
-    if heartbeatAcc < 0.5 then return end
-    heartbeatAcc = 0
-
-    if state.treadmill.autoBuy then pcall(upgradeTreadmill) end
-    if state.trail.autoBuy then pcall(buyTrails) end
-    if state.trail.autoEquip then pcall(equipBestTrail) end
-    if state.rebirth.auto and rebirthReady() then task.spawn(doRebirth) end
-    if state.daily.autoClaim then pcall(tryClaimDaily) end
-
-    if state.base.auto then
-        local now = os.clock()
-        if now >= state.base.backoff and now - state.base.lastFire >= 1 then
-            state.base.lastFire = now
-            task.spawn(fireBaseWithCheck)
-        end
-    end
-
-    if state.daily.currentDay then
-        local left = dailySecondsLeft()
-        DailyStatus:SetDesc(
-            left == 0 and ("Day %d ready to claim"):format(state.daily.currentDay)
-            or ("Day %d ready in %s"):format(state.daily.currentDay, formatTime(left))
-        )
-    end
-
-    if HalloweenConfig and isInWorld() then
-        pcall(autoBuyShopItems)
-        pcall(autoBuyHalloweenTreadmills)
-        pcall(autoBuyHalloweenTrails)
-        pcall(autoEquipHalloweenTrail)
-        pcall(autoTraderExchange)
-        pcall(autoTraderClaim)
-        pcall(autoEquipBestBat)
-        pcall(autoActivateAura)
+    if not state.active then return end
+    scanAccumulator += dt
+    if scanAccumulator < SCAN_INTERVAL then return end
+    scanAccumulator = 0
+    if isHalloweenWorldPresent() then
+        scanAll()
     end
 end)
 
-task.spawn(function()
-    while task.wait(1) do
-        if state.nest.active then scanNests() end
-    end
-end)
-
-workspace.DescendantAdded:Connect(function(d)
-    if d:IsA("BasePart") and d.Name == "Claim Button" then
-        if not buttonSet[d] then
-            buttonSet[d] = true
-            buttonCache[#buttonCache + 1] = d
-        end
-    end
-    if d:IsA("Model") then
-        watchNest(d)
-        if state.nest.active and isEgg(d) then
-            task.delay(0.15, function()
-                if d.Parent then enqueueNest(d) end
-            end)
-        end
-        if state.halloweenEgg.active then
-            watchHalloweenNPC(d)
-            task.delay(0.15, function()
-                if d.Parent then enqueueHalloweenNPC(d) end
-            end)
-        end
-    elseif d:IsA("HumanoidRootPart") and d.Parent and isEgg(d.Parent) then
-        watchNest(d.Parent)
-        if state.nest.active then
-            task.delay(0.15, function()
-                if d.Parent then enqueueNest(d.Parent) end
-            end)
-        end
-    end
-end)
-
-workspace.DescendantRemoving:Connect(function(d)
-    if buttonSet[d] then
-        buttonSet[d] = nil
-        local idx = table.find(buttonCache, d)
-        if idx then table.remove(buttonCache, idx) end
-    end
-    state.nest.claimed[d] = nil
-    state.nest.watched[d] = nil
-    state.nest.queueSet[d] = nil
-    state.halloweenEgg.claimed[d] = nil
-    state.halloweenEgg.watched[d] = nil
-    state.halloweenEgg.queueSet[d] = nil
-end)
-
-workspace.ChildAdded:Connect(function(child)
-    if child.Name ~= WORLD_NAME then return end
-    task.spawn(function()
-        forceStreamHalloweenWorld(STREAM_WAIT_TIMEOUT)
-        scanHalloweenNPCs()
-    end)
-end)
-
-local function attachRuntimeToWatcher(runtime)
+local function attachRuntime(runtime)
     if not runtime then return end
     if runtime:GetAttribute("HauntedWatcherAttached") then return end
     runtime:SetAttribute("HauntedWatcherAttached", true)
 
     runtime.DescendantAdded:Connect(function(d)
         if d:IsA("Model") then
-            watchHalloweenNPC(d)
-            if state.halloweenEgg.active then
+            watchNPC(d)
+            if state.active then
                 task.delay(0.15, function()
-                    if d.Parent then enqueueHalloweenNPC(d) end
+                    if d.Parent then enqueue(d) end
                 end)
             end
         elseif d:IsA("ProximityPrompt") and d.Parent and d.Parent.Name == "HumanoidRootPart" then
             local model = d.Parent.Parent
             if model and model:IsA("Model") then
-                watchHalloweenNPC(model)
-                if state.halloweenEgg.active then
+                watchNPC(model)
+                if state.active then
                     task.delay(0.15, function()
-                        if model.Parent then enqueueHalloweenNPC(model) end
+                        if model.Parent then enqueue(model) end
                     end)
                 end
             end
@@ -2009,13 +553,32 @@ local function attachRuntimeToWatcher(runtime)
     end)
 end
 
+local rt = resolveRuntime()
+if rt then
+    attachRuntime(rt)
+end
+
+workspace.ChildAdded:Connect(function(child)
+    if child.Name ~= WORLD_NAME then return end
+    task.wait(0.5)
+    local newRt = resolveRuntime()
+    if newRt then
+        attachRuntime(newRt)
+    end
+    if state.active then
+        scanAll()
+    end
+end)
+
 task.spawn(function()
     while task.wait(2) do
         if isHalloweenWorldPresent() then
-            local rt = resolveHalloweenRuntime()
-            if rt then
-                attachRuntimeToWatcher(rt)
-            end
+            local r = resolveRuntime()
+            if r then attachRuntime(r) end
         end
     end
 end)
+
+if isHalloweenWorldPresent() then
+    scanAll()
+end
