@@ -96,6 +96,11 @@ local TELEPORT_OFFSET = Vector3.new(0, 3, 0)
 local FIRE_ATTEMPTS = 4
 local FIRE_GAP = 0.08
 
+local EGG_RARITIES = {
+    "Common", "Uncommon", "Rare", "Epic", "Legendary",
+    "Mythical", "Mythic", "Secret", "Divine", "Cosmic",
+}
+
 local EGG_TIERS = {
     "Common", "Uncommon", "Rare", "Storm", "Eclipse", "Nova",
     "Astral", "Celestial", "Cosmic", "Eternal", "Transcendent",
@@ -544,20 +549,6 @@ local function scanNests()
             if state.nest.active then enqueueNest(d) end
         end
     end
-end
-
-local function collectRarities()
-    local known = {}
-    for _, d in ipairs(workspace:GetDescendants()) do
-        if d:IsA("Model") and isEgg(d) then
-            local rarity = getRarity(d)
-            if rarity ~= "Unknown" then known[rarity] = true end
-        end
-    end
-    local list = {}
-    for rarity in pairs(known) do list[#list + 1] = rarity end
-    table.sort(list)
-    return list
 end
 
 local function isInWorld()
@@ -1137,7 +1128,7 @@ local RarityPicker
 RarityPicker = FarmTab:Dropdown({
     Title = "Egg Rarities to Claim",
     Desc = "Choose which Egg rarities to collect, or leave empty to collect all rarities.",
-    Values = collectRarities(),
+    Values = EGG_RARITIES,
     Value = {},
     Multi = true,
     AllowNone = true,
@@ -1150,18 +1141,6 @@ RarityPicker = FarmTab:Dropdown({
             table.clear(state.nest.queueSet)
             scanNests()
         end
-    end,
-})
-
-FarmTab:Button({
-    Title = "Refresh Rarity List",
-    Desc = "Refresh the available Egg rarities.",
-    Icon = "refresh-cw",
-    Justify = "Center",
-    Callback = function()
-        local list = collectRarities()
-        pcall(function() RarityPicker:Refresh(list) end)
-        notify("Rarity List Updated", ("Found %d rarity type(s)"):format(#list), "refresh-cw", 3)
     end,
 })
 
