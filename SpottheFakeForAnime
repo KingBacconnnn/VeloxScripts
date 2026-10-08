@@ -575,6 +575,10 @@ local function isInWorld()
     return HalloweenConfig and player:GetAttribute(HalloweenConfig.WorldAttr) == HalloweenConfig.WorldName
 end
 
+local function isHalloweenWorldPresent()
+    return workspace:FindFirstChild(WORLD_NAME) ~= nil
+end
+
 local function getCandy()
     if not HalloweenConfig then return 0 end
     local v = player:GetAttribute(HalloweenConfig.Candy.Attr)
@@ -828,11 +832,17 @@ end
 
 local function forceStreamHalloweenWorld(timeout)
     timeout = timeout or STREAM_WAIT_TIMEOUT
-    if not HalloweenConfig then return nil end
-    if not workspace.StreamingEnabled then return resolveHalloweenRuntime() end
 
-    local world = workspace:FindFirstChild(HalloweenConfig.WorldName)
+    if not isHalloweenWorldPresent() then
+        return nil
+    end
+
+    local world = workspace:FindFirstChild(WORLD_NAME)
     if not world then return nil end
+
+    if not workspace.StreamingEnabled then
+        return resolveHalloweenRuntime()
+    end
 
     local started = os.clock()
     while os.clock() - started < timeout do
@@ -973,10 +983,12 @@ local function watchHalloweenNPC(model)
 end
 
 local function scanHalloweenNPCs()
+    if not isHalloweenWorldPresent() then return 0 end
+
     local runtime = resolveHalloweenRuntime()
     if not runtime then
-        if workspace.StreamingEnabled and HalloweenConfig then
-            local world = workspace:FindFirstChild(HalloweenConfig.WorldName)
+        if workspace.StreamingEnabled then
+            local world = workspace:FindFirstChild(WORLD_NAME)
             if world then
                 pcall(function() player:RequestStreamAroundAsync(world:GetPivot().Position) end)
             end
@@ -1027,6 +1039,16 @@ local function discoverHalloweenTiers()
 end
 
 local function scanExistingRarities()
+    if not isHalloweenWorldPresent() then
+        notifyThrottled(
+            "Not in Halloween World",
+            "Enter the Halloween World first, then scan again.",
+            "alert-triangle",
+            3
+        )
+        return nil
+    end
+
     local runtime = forceStreamHalloweenWorld(STREAM_WAIT_TIMEOUT)
     if not runtime then
         notifyThrottled("Scanner", "Halloween World is still loading, try again in a moment", "clock", 3)
@@ -1794,11 +1816,20 @@ HalloweenTab:Toggle({
     Callback = function(value)
         state.halloweenEgg.active = value == true
         if state.halloweenEgg.active then
-            notify("Auto Collect Egg Enabled", "Now collecting Halloween Eggs", "ghost", 2)
-            task.spawn(function()
-                forceStreamHalloweenWorld(STREAM_WAIT_TIMEOUT)
-                scanHalloweenNPCs()
-            end)
+            if not isHalloweenWorldPresent() then
+                notify(
+                    "Auto Collect Egg Enabled",
+                    "Waiting for you to enter the Halloween World…",
+                    "clock",
+                    3
+                )
+            else
+                notify("Auto Collect Egg Enabled", "Now collecting Halloween Eggs", "ghost", 2)
+                task.spawn(function()
+                    forceStreamHalloweenWorld(STREAM_WAIT_TIMEOUT)
+                    scanHalloweenNPCs()
+                end)
+            end
         else
             notify("Auto Collect Egg Disabled", "Stopped collecting Eggs", "pause", 2)
             table.clear(state.halloweenEgg.queue)
@@ -1811,7 +1842,7 @@ scanNests()
 requestDaily()
 
 task.spawn(function()
-    if HalloweenConfig then
+    if HalloweenConfig and isHalloweenWorldPresent() then
         forceStreamHalloweenWorld(STREAM_WAIT_TIMEOUT)
         scanHalloweenNPCs()
     end
@@ -1836,7 +1867,7 @@ RunService.Heartbeat:Connect(function(dt)
         end
     end
 
-    if state.halloweenEgg.active and halloweenScanAcc >= 1.5 then
+    if state.halloweenEgg.active and halloweenScanAcc >= 1.5 and isHalloweenWorldPresent() then
         halloweenScanAcc = 0
         if not cachedRuntime or not cachedRuntime.Parent then
             task.spawn(function()
@@ -1980,9 +2011,11 @@ end
 
 task.spawn(function()
     while task.wait(2) do
-        local rt = resolveHalloweenRuntime()
-        if rt then
-            attachRuntimeToWatcher(rt)
+        if isHalloweenWorldPresent() then
+            local rt = resolveHalloweenRuntime()
+            if rt then
+                attachRuntimeToWatcher(rt)
+            end
         end
     end
 end)
