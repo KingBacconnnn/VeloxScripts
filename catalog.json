@@ -15,6 +15,24 @@
     ]
   },
   {
+  "Name": "[🎃] Spot the Fake For Anime",
+  "Description": "Steal anime characters, bring them back to your base, collect rare ones, and try to get the best collection before other players steal yours.",
+  "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/SpottheFakeForAnime",
+  "ImageAssetId": "rbxassetid://119915721174886",
+  "TagType": "HOT",
+  "LastUpdated": "1791455570",
+  "PlaceId": 126546868403353,
+  "Category": "Simulation",
+  "Tags": [
+    "Anime",
+    "Stealing",
+    "Collecting",
+    "Multiplayer",
+    "Characters",
+    "Upgrades"
+  ]
+  },
+  {
   "Name": "Huss Valley",
   "Description": "Still on Beta some features dont work, or little bit buggy, but overall it works, i want to also add more features but i dont have remaining time to add it, but i will try to add more features as soon as possible if i have time thank you for using this.",
   "RawUrl": "https://raw.githubusercontent.com/KingBacconnnn/VeloxScripts/refs/heads/main/HussValley",
