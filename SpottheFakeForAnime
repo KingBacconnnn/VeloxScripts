@@ -800,8 +800,25 @@ local function resolveHalloweenRuntime()
     if not HalloweenConfig then return nil end
     local world = workspace:FindFirstChild(HalloweenConfig.WorldName)
     if not world then cachedHalloweenRuntime = nil return nil end
-    cachedHalloweenRuntime = world:FindFirstChild("Runtime")
-    return cachedHalloweenRuntime
+    local runtime = world:FindFirstChild("Runtime")
+    if not runtime then cachedHalloweenRuntime = nil return nil end
+    cachedHalloweenRuntime = runtime
+    return runtime
+end
+
+local function findPromptOnModel(model)
+    if not model then return nil, nil end
+    local root = model:FindFirstChild("HumanoidRootPart")
+    if not root then root = model.PrimaryPart end
+    if not root or not root:IsA("BasePart") then return nil, nil end
+
+    local prompt = root:FindFirstChildWhichIsA("ProximityPrompt", true)
+    if not prompt then
+        prompt = model:FindFirstChildWhichIsA("ProximityPrompt", true)
+    end
+    if not prompt then return nil, nil end
+
+    return root, prompt
 end
 
 local function isValidTier(name)
@@ -818,15 +835,15 @@ local function getHalloweenTier(model)
     if type(tier) == "string" and tier ~= "" then return tier end
     tier = model:GetAttribute("Rarity")
     if type(tier) == "string" and tier ~= "" then return tier end
+    tier = model:GetAttribute("EggTier")
+    if type(tier) == "string" and tier ~= "" then return tier end
     return "Unknown"
 end
 
 local function isHalloweenTargetNPC(model)
     if not model or not model:IsA("Model") then return false end
-    local root = model:FindFirstChild("HumanoidRootPart")
-    if not root then return false end
-    local prompt = root:FindFirstChild("ProximityPrompt")
-    return prompt ~= nil and prompt:IsA("ProximityPrompt")
+    local root, prompt = findPromptOnModel(model)
+    return root ~= nil and prompt ~= nil
 end
 
 local function matchesHalloweenTier(tier)
@@ -837,27 +854,41 @@ end
 local function processHalloweenNPC(model)
     if not state.halloweenEgg.active or not hrp or not hrp.Parent then return end
     if not model or not model.Parent or state.halloweenEgg.claimed[model] then return end
-    local tier = getHalloweenTier(model)
-    if not matchesHalloweenTier(tier) then return end
     if not isHalloweenTargetNPC(model) then return end
 
+    local tier = getHalloweenTier(model)
+    if not matchesHalloweenTier(tier) then return end
+
     state.halloweenEgg.claimed[model] = true
-    local root = model:FindFirstChild("HumanoidRootPart")
-    local prompt = root and root:FindFirstChild("ProximityPrompt")
-    if not root or not prompt then state.halloweenEgg.claimed[model] = nil return end
+
+    local root, prompt = findPromptOnModel(model)
+    if not root or not prompt then
+        state.halloweenEgg.claimed[model] = nil
+        return
+    end
 
     hrp.CFrame = root.CFrame + Vector3.new(0, 3, 0)
     hrp.AssemblyLinearVelocity = Vector3.zero
     task.wait(0.2)
+
+    if not hrp or not hrp.Parent then
+        state.halloweenEgg.claimed[model] = nil
+        return
+    end
+
     pcall(function()
         prompt.Enabled = true
         prompt.Visible = true
         prompt.HoldDuration = 0
     end)
-    for _ = 1, 4 do
-        pcall(fireproximityprompt, prompt)
-        task.wait(0.08)
+
+    if type(fireproximityprompt) == "function" then
+        for _ = 1, 4 do
+            pcall(fireproximityprompt, prompt)
+            task.wait(0.08)
+        end
     end
+
     hrp.CFrame = CFrame.new(-1498, -21, 11000)
     task.wait(0.15)
 end
@@ -911,13 +942,40 @@ end
 
 local function scanHalloweenNPCs()
     local runtime = resolveHalloweenRuntime()
-    if not runtime then return end
+    if not runtime then
+        if workspace.StreamingEnabled and HalloweenConfig then
+            local world = workspace:FindFirstChild(HalloweenConfig.WorldName)
+            if world then
+                pcall(function()
+                    player:RequestStreamAroundAsync(world:GetPivot().Position)
+                end)
+            end
+        end
+        return 0
+    end
+
+    local found = 0
     for _, model in ipairs(runtime:GetChildren()) do
         if model:IsA("Model") then
-            if not state.halloweenEgg.watched[model] then watchHalloweenNPC(model) end
-            if state.halloweenEgg.active then enqueueHalloweenNPC(model) end
+            if not state.halloweenEgg.watched[model] then
+                watchHalloweenNPC(model)
+            end
+            if isHalloweenTargetNPC(model) then
+                found += 1
+                if state.halloweenEgg.active then
+                    enqueueHalloweenNPC(model)
+                end
+            end
         end
     end
+
+    if found == 0 and workspace.StreamingEnabled then
+        pcall(function()
+            player:RequestStreamAroundAsync(runtime:GetPivot().Position)
+        end)
+    end
+
+    return found
 end
 
 local fallbackTiers = {
@@ -1636,8 +1694,8 @@ HalloweenTab:Toggle({
     Callback = function(value)
         state.halloweenEgg.active = value == true
         if state.halloweenEgg.active then
-            notify("Auto Collect Egg Enabled", "Now collecting Halloween Eggs", "ghost", 2)
             scanHalloweenNPCs()
+            notify("Auto Collect Egg Enabled", "Now collecting Halloween Eggs", "ghost", 2)
         else
             notify("Auto Collect Egg Disabled", "Stopped collecting Eggs", "pause", 2)
             table.clear(state.halloweenEgg.queue)
@@ -1655,13 +1713,11 @@ if buyRemote then safeFire(buyRemote, "sync") end
 local heartbeatAcc = 0
 local hMoneyAcc = 0
 local halloweenSyncAcc = 0
-local nestScanAcc = 0
 
 RunService.Heartbeat:Connect(function(dt)
     heartbeatAcc += dt
     hMoneyAcc += dt
     halloweenSyncAcc += dt
-    nestScanAcc += dt
 
     if moneyEnabled and hMoneyAcc >= 0.05 then
         hMoneyAcc = 0
