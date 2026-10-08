@@ -96,6 +96,13 @@ local TELEPORT_OFFSET = Vector3.new(0, 3, 0)
 local FIRE_ATTEMPTS = 4
 local FIRE_GAP = 0.08
 
+local EGG_TIERS = {
+    "Common", "Uncommon", "Rare", "Storm", "Eclipse", "Nova",
+    "Astral", "Celestial", "Cosmic", "Eternal", "Transcendent",
+    "Infinite", "Ascended", "Primordial", "Haunted", "Cursed",
+    "Phantom", "Wicked", "Nightmare", "Macabre", "Eldritch", "Abyssal",
+}
+
 local state = {
     treadmill = { autoBuy = false, busy = false, lastNotEnough = 0 },
     trail = { autoBuy = false, autoEquip = false, busy = false },
@@ -132,7 +139,6 @@ local buttonSet = {}
 local moneyEnabled = false
 local cachedHrp
 local cachedRuntime
-local lastScanNotify = 0
 
 local function rebuildButtonCache()
     table.clear(buttonCache)
@@ -151,13 +157,6 @@ local function notify(title, content, icon, duration)
     pcall(function()
         WindUI:Notify({ Title = title, Content = content, Duration = duration or 2, Icon = icon or "info" })
     end)
-end
-
-local function notifyThrottled(title, content, icon, duration, cooldown)
-    cooldown = cooldown or 3
-    if os.clock() - lastScanNotify < cooldown then return end
-    lastScanNotify = os.clock()
-    notify(title, content, icon, duration)
 end
 
 local function safeFire(remote, ...)
@@ -813,18 +812,10 @@ end
 
 local function resolveHalloweenRuntime()
     if cachedRuntime and cachedRuntime.Parent then return cachedRuntime end
-    if not HalloweenConfig then return nil end
     local world = workspace:FindFirstChild(WORLD_NAME)
     if not world then cachedRuntime = nil return nil end
     cachedRuntime = world:FindFirstChild(RUNTIME_NAME)
     return cachedRuntime
-end
-
-local function isValidTier(name)
-    if type(name) ~= "string" or name == "" then return false end
-    if not TIER_TEXT_FX or not TIER_TEXT_FX.tierColorAt then return true end
-    local ok, color = pcall(TIER_TEXT_FX.tierColorAt, name, 0)
-    return ok and color ~= nil
 end
 
 local function getHalloweenTier(model)
@@ -971,97 +962,6 @@ local function scanHalloweenNPCs()
         end
     end
     return found
-end
-
-local function discoverHalloweenTiers()
-    local found = {}
-    local runtime = resolveHalloweenRuntime()
-    if runtime then
-        for _, model in ipairs(runtime:GetChildren()) do
-            if model:IsA("Model") and isHalloweenTargetNPC(model) then
-                local tier = getHalloweenTier(model)
-                if tier ~= "Unknown" and isValidTier(tier) then found[tier] = true end
-            end
-        end
-    end
-    local list = {}
-    for tier in pairs(found) do list[#list + 1] = tier end
-    table.sort(list)
-    return list
-end
-
-local function scanExistingRarities()
-    if not isHalloweenWorldPresent() then
-        notifyThrottled(
-            "Not in Halloween World",
-            "Enter the Halloween World first, then scan again.",
-            "alert-triangle",
-            3
-        )
-        return nil
-    end
-
-    local runtime = resolveHalloweenRuntime()
-    if not runtime then
-        notifyThrottled("Scanner", "Halloween World is still loading, try again in a moment", "clock", 3)
-        return nil
-    end
-
-    local tierCounts = {}
-    local totalNPCs = 0
-    local validNPCs = 0
-
-    for _, model in ipairs(runtime:GetChildren()) do
-        if model:IsA("Model") then
-            totalNPCs += 1
-            if isHalloweenTargetNPC(model) then
-                validNPCs += 1
-                local tier = getHalloweenTier(model)
-                tierCounts[tier] = (tierCounts[tier] or 0) + 1
-            end
-        end
-    end
-
-    if validNPCs == 0 then
-        notifyThrottled(
-            "Scanner",
-            ("Found %d models, 0 valid NPCs yet — world still streaming"):format(totalNPCs),
-            "clock",
-            3
-        )
-        return nil
-    end
-
-    local sorted = {}
-    for tier, count in pairs(tierCounts) do
-        sorted[#sorted + 1] = { tier = tier, count = count }
-    end
-    table.sort(sorted, function(a, b) return a.tier < b.tier end)
-
-    print("[HauntedScanner] ================================================")
-    print(("[HauntedScanner] Scanned %d models | %d valid NPCs"):format(totalNPCs, validNPCs))
-    print("[HauntedScanner] Tiers currently in the world:")
-    for _, entry in ipairs(sorted) do
-        print(("[HauntedScanner]   %-14s x %d"):format(entry.tier, entry.count))
-    end
-    print("[HauntedScanner] ================================================")
-
-    local summary = {}
-    for i = 1, math.min(#sorted, 5) do
-        summary[#summary + 1] = ("%s x%d"):format(sorted[i].tier, sorted[i].count)
-    end
-    local summaryText = table.concat(summary, "  ")
-    if #sorted > 5 then
-        summaryText = summaryText .. ("  (+%d more)"):format(#sorted - 5)
-    end
-
-    notify(
-        "Scan Complete",
-        ("%d NPCs across %d tiers\n%s"):format(validNPCs, #sorted, summaryText),
-        "check",
-        5
-    )
-    return sorted
 end
 
 if traderStateEvent then
@@ -1705,9 +1605,9 @@ HalloweenTab:Divider()
 
 local HalloweenTierPicker
 HalloweenTierPicker = HalloweenTab:Dropdown({
-    Title = "Cursed Tiers",
-    Desc = "Choose which Egg tiers to collect, or leave empty to collect every cursed tier.",
-    Values = discoverHalloweenTiers(),
+    Title = "Egg Tiers",
+    Desc = "Choose which Egg tiers to collect, or leave empty to collect all tiers.",
+    Values = EGG_TIERS,
     Value = {},
     Multi = true,
     AllowNone = true,
@@ -1722,35 +1622,6 @@ HalloweenTierPicker = HalloweenTab:Dropdown({
             table.clear(state.halloweenEgg.queueSet)
             scanHalloweenNPCs()
         end
-    end,
-})
-
-HalloweenTab:Button({
-    Title = "Scan Existing Rarities",
-    Desc = "Scan the Halloween world and report which Egg rarities are currently spawned.",
-    Icon = "scan-search",
-    Justify = "Center",
-    Callback = function()
-        local result = scanExistingRarities()
-        if result then
-            local list = {}
-            for _, entry in ipairs(result) do
-                list[#list + 1] = entry.tier
-            end
-            pcall(function() HalloweenTierPicker:Refresh(list) end)
-        end
-    end,
-})
-
-HalloweenTab:Button({
-    Title = "Refresh Cursed Tiers",
-    Desc = "Refresh the available Halloween Egg tiers.",
-    Icon = "refresh-cw",
-    Justify = "Center",
-    Callback = function()
-        local list = discoverHalloweenTiers()
-        pcall(function() HalloweenTierPicker:Refresh(list) end)
-        notify("Cursed Tiers Updated", ("Found %d tier type(s)"):format(#list), "refresh-cw", 3)
     end,
 })
 
